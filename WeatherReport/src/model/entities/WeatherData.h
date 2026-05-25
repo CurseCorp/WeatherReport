@@ -7,4 +7,6 @@ struct WeatherData {
     double temperature;
     int humidity;
     std::string description;
+    double windSpeed;
+    int pressure;
 };
