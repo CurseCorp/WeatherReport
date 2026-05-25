@@ -1,6 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QQmlContext> // <-- ОБЯЗАТЕЛЬНО ДОБАВЬ ЭТОТ ИНКЛЮД
+#include <QQmlContext>
 #include "viewmodel/WeatherViewModel.h"
 
 int main(int argc, char *argv[]) {

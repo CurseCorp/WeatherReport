@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <memory>
 class WeatherViewModel : public QObject
 {
     Q_OBJECT
@@ -18,3 +19,18 @@ private:
 };
 
 #endif // WEATHERVIEWMODEL_H
+//temp
+//desc
+//влажность
+//Скорость ветра
+//Давление
+//Дата и время
+
+//City
+//Id
+// Name
+// Country code
+// Coordinates
+
+//Forecast
+//Cach
