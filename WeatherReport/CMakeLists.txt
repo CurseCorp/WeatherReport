@@ -16,6 +16,7 @@ qt_add_executable(appWeatherReport
     src/model/entities/City.h
     src/model/entities/ForecastData.h
     src/model/entities/WeatherData.h
+    src/model/entities/WeatherService.h
 )
 
 
