@@ -1,16 +1,22 @@
-#include "weatherviewmodel.h"
-#include <QDebug>
-WeatherViewModel::WeatherViewModel(QObject *parent)
-    : QObject(parent), m_visibleCityName("Москва (Ожидание поиска)") {
+
+#include "WeatherViewModel.h"
+
+WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherService> service, QObject *parent)
+    : QObject(parent)
+    , m_modelService(service)
+{
+
 }
 
-QString WeatherViewModel::visibleCityName() const {
-    return m_visibleCityName;
-}
+void WeatherViewModel::loadWeather(const QString& city) {
+    if (city.isEmpty()) return;
 
-void WeatherViewModel::searchCity(const QString &cityName) {
-    if (cityName.isEmpty()) return;
-    qDebug() << "ViewModel поймала поиск для города:" << cityName;
-    m_visibleCityName = cityName.toUpper() + " (+22°C, Симуляция)";
-    emit visibleCityNameChanged();
+    WeatherData rawData = m_modelService->fetchCurrentWeather(city.toStdString());
+
+    m_cityNameText = QString::fromStdString(rawData.cityName);
+    m_tempText = QString::number(rawData.temperature, 'f', 1) + " °C";
+    m_humidity = QString::number(rawData.humidity) + " %";
+    m_description = QString::fromStdString(rawData.description);
+
+    emit weatherUpdated();
 }

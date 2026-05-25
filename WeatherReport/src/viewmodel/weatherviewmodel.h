@@ -4,18 +4,27 @@
 #include <QObject>
 #include <QString>
 #include <memory>
+#include "../model/entities/WeatherService.h"
 class WeatherViewModel : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString visibleCityName READ visibleCityName NOTIFY visibleCityNameChanged)
+    Q_PROPERTY(QString cityNameText READ cityNameText NOTIFY weatherUpdated)
+    Q_PROPERTY(QString tempText READ tempText NOTIFY weatherUpdated)
 public:
-    explicit WeatherViewModel(QObject *parent = nullptr);
-    QString visibleCityName() const;
-    Q_INVOKABLE void searchCity(const QString &cityName);
+   explicit WeatherViewModel(std::shared_ptr<WeatherService> service, QObject *parent = nullptr);
+    QString cityNameText() const { return m_cityNameText; }
+    QString tempText() const { return m_tempText; }
+    QString humidity() const {return m_humidity;   }
+    QString description() const {return m_description;   }
+    Q_INVOKABLE void loadWeather(const QString& city);
 signals:
-    void visibleCityNameChanged();
+    void weatherUpdated();
 private:
-    QString m_visibleCityName;
+    std::shared_ptr<WeatherService> m_modelService;
+    QString m_cityNameText = "—";
+    QString m_tempText = "0°C";
+    QString m_humidity = "0%";
+    QString m_description = "Not wodnloaded yet";
 };
 
 #endif // WEATHERVIEWMODEL_H
