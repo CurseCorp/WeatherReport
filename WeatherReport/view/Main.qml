@@ -31,5 +31,12 @@ Window {
             anchors.horizontalCenter: parent
             onClicked: weatherViewModel.searchCity(cityInput.text)
         }
+
+
+        Text{
+            text: weatherViewModel.tempText
+            color: "#123123"
+            font.pointSize: 22
+        }
     }
 }
