@@ -12,7 +12,7 @@
 * **Фреймворк:** Qt 6.x (Core, QML, Quick, Network)
 * **Система сборки:** CMake
 * **Архитектура:** MVVM (Model-View-ViewModel)
-* **API данных:** OpenWeatherMap API
+* **API данных:** Weather API
 * **База данных (Кэш):** Postgres / QSettings
 
 ---
