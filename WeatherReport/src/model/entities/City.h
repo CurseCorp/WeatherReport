@@ -12,4 +12,6 @@ class City : public QObject
     Q_OBJECT
 
 };
+
 #endif
+
