@@ -32,7 +32,7 @@ qt_add_qml_module(appWeatherReport
         view/TitleButton.qml
         view/ForecastCard.qml
         view/FavoriteItem.qml
-        view/DetailCar.qml
+        view/DetailCard.qml
         view/TabButton.qml
         view/SettingsView.qml
     RESOURCES
