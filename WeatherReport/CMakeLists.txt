@@ -13,6 +13,9 @@ qt_add_executable(appWeatherReport
     src/main.cpp
     src/viewmodel/WeatherViewModel.h
     src/viewmodel/WeatherViewModel.cpp
+    src/model/City.h
+    src/model/ForecastData.h
+    src/model/WeatherData.h
 )
 
 # 2. Здесь регистрируем ТОЛЬКО QML файлы интерфейса
