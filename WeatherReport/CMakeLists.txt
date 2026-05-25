@@ -8,18 +8,17 @@ find_package(Qt6 REQUIRED COMPONENTS Core Quick)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
-# 1. Здесь собираем весь наш C++ код (и main, и твою ViewModel)
 qt_add_executable(appWeatherReport
     src/main.cpp
     src/viewmodel/WeatherViewModel.h
     src/viewmodel/WeatherViewModel.cpp
 )
 
-# 2. Здесь регистрируем ТОЛЬКО QML файлы интерфейса
+
 qt_add_qml_module(appWeatherReport
     URI WeatherReport
     VERSION 1.0
-    RESOURCE_PREFIX "/"  # Префикс, который гарантирует стандартный путь qrc:/
+    RESOURCE_PREFIX "/"  
     QML_FILES
         view/Main.qml
 )
@@ -31,7 +30,7 @@ set_target_properties(appWeatherReport PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-# 3. Линкуем библиотеки Qt
+
 target_link_libraries(appWeatherReport
     PRIVATE
         Qt6::Core
