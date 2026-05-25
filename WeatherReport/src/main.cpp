@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
     engine.rootContext()->setContextProperty("weatherViewModel", weatherViewModel.get());
 
-    const QUrl url(QStringLiteral("qrc:/view/Main.qml"));
+    const QUrl url(QStringLiteral("qrc:/WeatherReport/view/Main.qml"));
     engine.load(url);
 
     return app.exec();
