@@ -26,6 +26,15 @@ qt_add_qml_module(appWeatherReport
     RESOURCE_PREFIX "/"
     QML_FILES
         view/Main.qml
+        view/TitleButton.qml
+        view/ForecastCard.qml
+        view/FavoriteItem.qml
+        view/DetailCar.qml
+        view/TabButton.qml
+        view/SettingsView.qml
+    RESOURCES
+        images/rain.png
+
 )
 
 set_target_properties(appWeatherReport PROPERTIES
