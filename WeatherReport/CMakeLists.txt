@@ -3,17 +3,19 @@ cmake_minimum_required(VERSION 3.16)
 project(WeatherReport VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick)
+# ДОБАВЛЕНЫ Network и Sql
+find_package(Qt6 REQUIRED COMPONENTS Core Quick Network Sql)
 
 qt_standard_project_setup(REQUIRES 6.8)
-
 
 qt_add_executable(appWeatherReport
     src/main.cpp
     src/viewmodel/WeatherViewModel.h
     src/viewmodel/WeatherViewModel.cpp
     src/model/entities/City.h
+    src/model/services/CityAPI.cpp
     src/model/entities/ForecastData.h
     src/model/entities/WeatherData.h
     src/model/entities/WeatherService.h
@@ -26,6 +28,7 @@ qt_add_qml_module(appWeatherReport
     RESOURCE_PREFIX "/"
     QML_FILES
         view/Main.qml
+
         view/TitleButton.qml
         view/ForecastCard.qml
         view/FavoriteItem.qml
@@ -34,6 +37,7 @@ qt_add_qml_module(appWeatherReport
         view/SettingsView.qml
     RESOURCES
         images/rain.png
+
 
 )
 
@@ -44,11 +48,12 @@ set_target_properties(appWeatherReport PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-
 target_link_libraries(appWeatherReport
     PRIVATE
         Qt6::Core
         Qt6::Quick
+        Qt6::Network
+        Qt6::Sql
 )
 
 include(GNUInstallDirs)
