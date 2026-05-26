@@ -15,11 +15,19 @@ qt_add_executable(appWeatherReport
     src/viewmodel/WeatherViewModel.h
     src/viewmodel/WeatherViewModel.cpp
     src/model/entities/City.h
-    src/model/entities/City.cpp
+    src/model/services/weatherapi.h
+    src/model/services/cityapi.h
+    src/model/services/weatherdb.h
+    src/model/services/citydb.h
+    src/model/services/WeatherAPI.cpp
+    src/model/services/weatherdb.cpp
+    src/model/services/cityapi.cpp
+    src/model/services/citydb.cpp
     src/model/entities/ForecastData.h
     src/model/entities/WeatherData.h
     src/model/entities/WeatherService.h
 )
+
 
 qt_add_qml_module(appWeatherReport
     URI WeatherReport
@@ -27,6 +35,21 @@ qt_add_qml_module(appWeatherReport
     RESOURCE_PREFIX "/"
     QML_FILES
         view/Main.qml
+
+        view/TitleButton.qml
+        view/ForecastCard.qml
+        view/FavoriteItem.qml
+        view/DetailCard.qml
+        view/TabButton.qml
+        view/SettingsView.qml
+    RESOURCES
+        images/rain.png
+        SOURCES src/model/services/weatherdb.h src/model/services/weatherdb.cpp
+        SOURCES src/model/services/cityapi.h src/model/services/cityapi.cpp
+        SOURCES src/model/services/citydb.h src/model/services/citydb.cpp
+        SOURCES src/model/services/weatherapi.h
+
+
 )
 
 set_target_properties(appWeatherReport PROPERTIES
@@ -36,7 +59,6 @@ set_target_properties(appWeatherReport PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-# ДОБАВЛЕНЫ Network и Sql в линковку
 target_link_libraries(appWeatherReport
     PRIVATE
         Qt6::Core
