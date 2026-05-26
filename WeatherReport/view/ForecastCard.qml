@@ -20,7 +20,7 @@ Rectangle {
     Behavior on color        { ColorAnimation { duration: 180 } }
     Behavior on border.color { ColorAnimation { duration: 180 } }
 
-    // Тень — смещённый прямоугольник позади карточки
+    //Тень
     Rectangle {
         anchors.fill: parent; anchors.margins: -1
         radius: parent.radius + 1
@@ -29,7 +29,7 @@ Rectangle {
         transform: Translate { y: 3 }
     }
 
-    // Анимация поднятия при наведении
+    //Анимация поднятия при наведении
     Behavior on y { SmoothedAnimation { velocity: 100 } }
 
     ColumnLayout {

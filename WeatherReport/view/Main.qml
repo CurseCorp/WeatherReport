@@ -4,16 +4,18 @@ import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 
 Window {
+    Component.onCompleted: {
+            weatherViewModel.loadWeather("Москва")
+        }
     QtObject {
-        id: weatherViewModel
 
+        //MOCK
         property string cityName:         "Старый Оскол, Россия"
         property string weekday:          "Понедельник"
         property string day:              "25"
         property string month:            "Май"
         property string temperature:      "+18°C"
         property string feelsLike:        "+15°C"
-        property string description:      "Переменная облачность"
         property string iconCode:         "02d"
         property string humidity:         "65%"
         property string windSpeed:        "4.2 м/с"
@@ -21,7 +23,7 @@ Window {
         property string precipitation:    "< 1.3 мм"
         property bool   isCelsius:         true
         property bool   isLoading:         false
-        property bool   isOffline:         false
+        property bool   isOffline:         true
         property string lastUpdated:      "14:32"
 
 
@@ -63,7 +65,6 @@ Window {
     readonly property color danger:      "#EF5350"
     readonly property color success:     "#66BB6A"
 
-
     // Режим добавления избранного
     property bool addMode: false
 
@@ -95,7 +96,7 @@ Window {
         anchors.fill: parent
         spacing: 0
 
-//Заголовок ---------------------------------------------------
+        //Заголовок
         Rectangle {
             Layout.fillWidth: true
             height: 54
@@ -124,7 +125,7 @@ Window {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
-
+                //Плашка оффлайн
                 Rectangle {
                     visible: typeof weatherViewModel !== "undefined"
                              ? weatherViewModel.isOffline : false
@@ -142,7 +143,7 @@ Window {
                         font.letterSpacing: 1
                     }
                 }
-
+                //Обновления + кнопки
                 Item { Layout.fillWidth: true }
 
                 Text {
@@ -185,7 +186,7 @@ Window {
                 }
             }
         }
-//-------Левый бар с настройками------------------------------------------
+        //Левый бар с настройками
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -215,7 +216,7 @@ Window {
                 color: root.bgCard
             }
         }
-        // Основа
+        // Город + некоторые данные
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
@@ -233,7 +234,7 @@ Window {
                 anchors.margins: 20
                 anchors.leftMargin: 30
                 text: typeof weatherViewModel !== "undefined"
-                      ? weatherViewModel.cityName : "—"
+                      ? weatherViewModel.cityNameText : "—"
                 font.pixelSize: 30
                 font.weight: Font.Medium
                 color: root.textPrimary
@@ -255,7 +256,7 @@ Window {
                 Layout.fillWidth: true
             }
         }
-            // Основная погода
+        // Основная погода
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
@@ -268,13 +269,7 @@ Window {
             color: root.bgCard
             clip: true
 
-            BusyIndicator {
-                anchors.centerIn: parent
-                running: typeof weatherViewModel !== "undefined"
-                         ? weatherViewModel.isLoading : false
-                visible: running
-                palette.dark: root.accent
-            }
+
 
             Row {
                 anchors.fill: parent
@@ -287,7 +282,7 @@ Window {
 
                     Text {
                         text: typeof weatherViewModel !== "undefined"
-                              ? weatherViewModel.temperature : "--°"
+                              ? weatherViewModel.tempText : "--°"
                         font.pixelSize: 48
                         font.weight: Font.Light
                         color: root.textPrimary
@@ -309,7 +304,7 @@ Window {
                 }
 
                 Image {
-                    source: getWeatherEmoji(weatherViewModel.iconCode)
+                    source: getWeatherEmoji(weatherViewModel.description)
 
                     width: 400
                     height: 400
@@ -324,7 +319,7 @@ Window {
 
 
             }
-            // 4 свойства
+            // 4 свойства погоды
             Rectangle {
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -344,7 +339,7 @@ Window {
                     anchors.leftMargin: 10
                     DetailCard {
                         Layout.alignment: Qt.AlignHCenter
-                        icon: "humidity.png"
+                        icon: "images/humidity.png"
                         label: "Влажность"
                         value: typeof weatherViewModel !== "undefined"
                                ? weatherViewModel.humidity : "--"
@@ -352,7 +347,7 @@ Window {
                     }
                     DetailCard {
                         Layout.alignment: Qt.AlignHCenter
-                        icon: "windSpeed.png"
+                        icon: "images/windSpeed.png"
                         label: "Ветер"
                         value: typeof weatherViewModel !== "undefined"
                                ? weatherViewModel.windSpeed : "--"
@@ -360,7 +355,7 @@ Window {
                     }
                     DetailCard {
                         Layout.alignment: Qt.AlignHCenter
-                        icon: "pressure.png"
+                        icon: "images/pressure.png"
                         label: "Давление"
                         value: typeof weatherViewModel !== "undefined"
                                ? weatherViewModel.pressure : "--"
@@ -368,7 +363,7 @@ Window {
                     }
                     DetailCard {
                         Layout.alignment: Qt.AlignHCenter
-                        icon: "precipitation.png"
+                        icon: "images/precipitation.png"
                         label: "Осадки"
                         value: typeof weatherViewModel !== "undefined"
                                ? weatherViewModel.precipitation : "--"
@@ -376,7 +371,7 @@ Window {
                     }
                 }
             }
-            // Дни погоды
+            // 7 дней погоды
             Rectangle {
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
@@ -455,7 +450,7 @@ Window {
                     }
                 }
             }
-            //поиск
+            //Поисковая строка
 
             Rectangle {
                 id: searchAreaWrapper
@@ -474,7 +469,6 @@ Window {
                     NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                 }
 
-                // Поисковая строка
                 Rectangle {
                     id: searchBoxOuter
                     anchors.top: parent.top
@@ -577,7 +571,7 @@ Window {
                     }
                 }
 
-                // Кнопка "Добавить" — появляется в addMode
+                // Кнопка "Добавить" появляется в addMode
                 Rectangle {
                     id: addFavBtn
                     anchors.top: parent.top
@@ -723,146 +717,7 @@ Window {
                     }
                 }
             }
-
-            // Текущая погода
-            Rectangle {
-                Layout.fillWidth: true
-                height: 240
-                radius: 14
-                color: root.bgCard
-                clip: true
-
-                Rectangle {
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: parent.height * 0.6
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: Qt.rgba(0.31, 0.76, 0.97, 0.07) }
-                        GradientStop { position: 1.0; color: "transparent" }
-                    }
-                }
-
-                BusyIndicator {
-                    anchors.centerIn: parent
-                    running: typeof weatherViewModel !== "undefined"
-                             ? weatherViewModel.isLoading : false
-                    visible: running
-                    palette.dark: root.accent
-                }
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 20
-                    spacing: 4
-                    visible: typeof weatherViewModel !== "undefined"
-                             ? !weatherViewModel.isLoading : true
-
-                    Text {
-                        text: typeof weatherViewModel !== "undefined"
-                              ? weatherViewModel.cityName : "—"
-                        font.pixelSize: 18
-                        font.weight: Font.Medium
-                        color: root.textPrimary
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-                    Text {
-                        text: typeof weatherViewModel !== "undefined"
-                              ? weatherViewModel.description : ""
-                        font.pixelSize: 13
-                        color: root.textSecond
-                    }
-
-                    Item { height: 4 }
-
-                    RowLayout {
-                        spacing: 12
-                        Text {
-                            text: typeof weatherViewModel !== "undefined"
-                                  ? getWeatherEmoji(weatherViewModel.iconCode) : "🌡"
-                            font.pixelSize: 56
-                        }
-                        ColumnLayout {
-                            spacing: 0
-                            Text {
-                                text: typeof weatherViewModel !== "undefined"
-                                      ? weatherViewModel.temperature : "--°"
-                                font.pixelSize: 48
-                                font.weight: Font.Light
-                                color: root.textPrimary
-                            }
-                            Text {
-                                text: typeof weatherViewModel !== "undefined"
-                                      ? "Ощущается как " + weatherViewModel.feelsLike : ""
-                                font.pixelSize: 12
-                                color: root.textSecond
-                            }
-                        }
-                    }
-
-                    Item { Layout.fillHeight: true }
-
-                    // Переключатель C / F
-                    Rectangle {
-                        width: 80
-                        height: 28
-                        radius: 14
-                        color: root.border
-                        Layout.alignment: Qt.AlignRight
-
-                        Rectangle {
-                            width: 40
-                            height: 28
-                            radius: 14
-                            color: root.accent
-                            x: typeof weatherViewModel !== "undefined"
-                               ? (weatherViewModel.isCelsius ? 0 : 40) : 0
-                            Behavior on x {
-                                SmoothedAnimation { duration: 200 }
-                            }
-                        }
-                        RowLayout {
-                            anchors.fill: parent
-                            spacing: 0
-                            Text {
-                                Layout.fillWidth: true
-                                text: "°C"
-                                font.pixelSize: 12
-                                font.weight: Font.Medium
-                                horizontalAlignment: Text.AlignHCenter
-                                color: typeof weatherViewModel !== "undefined"
-                                       ? (weatherViewModel.isCelsius ? root.bgDeep : root.textSecond)
-                                       : root.bgDeep
-                                Behavior on color {
-                                    ColorAnimation { duration: 200 }
-                                }
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: "°F"
-                                font.pixelSize: 12
-                                font.weight: Font.Medium
-                                horizontalAlignment: Text.AlignHCenter
-                                color: typeof weatherViewModel !== "undefined"
-                                       ? (!weatherViewModel.isCelsius ? root.bgDeep : root.textSecond)
-                                       : root.textSecond
-                                Behavior on color {
-                                    ColorAnimation { duration: 200 }
-                                }
-                            }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (typeof weatherViewModel !== "undefined")
-                                    weatherViewModel.switchUnits()
-                            }
-                        }
-                    }
-                }
-            }
+            //Избранное
             Rectangle {
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -926,7 +781,7 @@ Window {
                                     appRoot: root
                                     onSelectCity: {
                                         if (typeof weatherViewModel !== "undefined") {
-                                            weatherViewModel.cityName = cityName
+                                            weatherViewModel.cityNameText = cityName
                                             weatherViewModel.selectCity(cityName, country)
                                         }
                                     }
@@ -960,13 +815,10 @@ Window {
                         }
                     }
                 }
-
-
-                }
-
-
             }
         }
+    }
+    //Вкладка настроек
     Drawer {
         id: settingsDrawer
         width: 320
@@ -989,13 +841,13 @@ Window {
             onClose: settingsDrawer.close()
         }
     }
-
+    //Подбор иконки погоды по коду
     function getWeatherEmoji(code) {
         if (!code) return "🌡"
         var c = code.substring(0, 2)
         var map = {
-            "01": "sun.png",
-            "02": "rain.png",
+            "01": "images/sun.png",
+            "Patchy rain nearby": "images/rain.png",
             "03": "☁️",
             "04": "☁️",
             "09": "🌧",

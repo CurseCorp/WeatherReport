@@ -23,6 +23,9 @@ void WeatherViewModel::loadWeather(const QString& city) {
     m_description =rawData.description;
     m_windSpeed = QString::number(rawData.windSpeedMs) + "М/С";
     m_pressure = QString::number(rawData.pressure) + "мм рт.ст.";
+    m_precipitation = QString::number(rawData.precipitationMm) + "ММ";
+    m_minTemp = QString::number(rawData.temperatureMin, 'f', 1) + " °C";
+    m_maxTemp = QString::number(rawData.temperatureMax, 'f', 1) + " °C";
 
 
     emit weatherUpdated();

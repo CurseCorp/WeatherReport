@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-// ── Карточка детального параметра (влажность, ветер, давление, видимость)
+//ячейки для 4 свойств погоды
 Rectangle {
     id: card
     property string icon: "humidity.png"

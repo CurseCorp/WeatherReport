@@ -2,14 +2,14 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 
-// ── Панель настроек (открывается как Drawer справа) ───────────────────
+//Настройки
 Item {
     id: settingsView
 
     // ── Сигналы ───────────────────────────────────────────────────────
     signal close()
 
-    // ── Цвета (повторяем локально, т.к. это отдельный файл) ──────────
+    //Цвета
     readonly property color bgDeep:      "#373641"
     readonly property color bgCard:      "#353333"
     readonly property color bgCardHover: "#1A2238"
@@ -21,12 +21,11 @@ Item {
     readonly property color danger:      "#EF5350"
     readonly property color success:     "#66BB6A"
 
-    // ── Layout ────────────────────────────────────────────────────────
     ColumnLayout {
         anchors { fill: parent; margins: 0 }
         spacing: 0
 
-        // Заголовок
+        //Заголовок
         Rectangle {
             Layout.fillWidth: true
             height: 60
@@ -77,7 +76,7 @@ Item {
             }
         }
 
-        // Тело настроек
+        //Тело настроек
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -88,10 +87,10 @@ Item {
                 width: parent.width
                 spacing: 0
 
-                // ── Секция: Единицы измерения ─────────────────────────
+                //Единицы измерения: температура и скорость ветра
                 SectionHeader { title: "ЕДИНИЦЫ ИЗМЕРЕНИЯ" }
 
-                // Температура
+                //Температура
                 SettingsRow {
                     label:    "Температура"
                     sublabel: "Отображение в градусах"
@@ -116,7 +115,7 @@ Item {
                     }
                 }
 
-                // Скорость ветра
+                //Скорость ветра
                 SettingsRow {
                     label:    "Скорость ветра"
                     sublabel: "Единица скорости"
@@ -141,7 +140,7 @@ Item {
                     }
                 }
 
-                // ── Секция: API ───────────────────────────────────────
+                //Настройка API
                 SectionHeader { title: "API" }
 
                 ColumnLayout {
@@ -215,7 +214,7 @@ Item {
                     Item { height: 4 }
                 }
 
-                // ── Секция: Обновление ────────────────────────────────
+                //Обновления
                 SectionHeader { title: "АВТООБНОВЛЕНИЕ" }
 
                 SettingsRow {
@@ -242,9 +241,7 @@ Item {
                     }
                 }
 
-
-
-                // ── Кнопка сохранить ──────────────────────────────────
+                //Сохранение
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.leftMargin: 20
@@ -282,7 +279,7 @@ Item {
         }
     }
 
-    // ── Toast «Сохранено» ─────────────────────────────────────────────
+    //Всплывающее окно сохранения
     Rectangle {
         id: savedToast
         visible: false
@@ -311,7 +308,7 @@ Item {
         }
     }
 
-    // ── Вспомогательные inline-компоненты ─────────────────────────────
+    //Вспомогательные компоненты
 
     component SectionHeader: Rectangle {
         property string title: ""

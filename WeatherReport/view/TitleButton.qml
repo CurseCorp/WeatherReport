@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-// ── Кнопка в заголовке окна ────────────────────────────────────────────
+//Красивая кнопка
 Rectangle {
     id: btn
     property string icon:        "×"

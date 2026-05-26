@@ -37,17 +37,15 @@ qt_add_qml_module(appWeatherReport
         view/ForecastCard.qml
         view/FavoriteItem.qml
         view/DetailCard.qml
-        view/TabButton.qml
         view/SettingsView.qml
     RESOURCES
-        images/rain.png
-        images/sun.png
+        view/images/rain.png
+        view/images/sun.png
 
-
-        images/humidity.png
-        images/precipitation.png
-        images/pressure.png
-        images/windSpeed.png
+        view/images/humidity.png
+        view/images/precipitation.png
+        view/images/pressure.png
+        view/images/windSpeed.png
 
 )
 
