@@ -19,6 +19,10 @@ qt_add_executable(appWeatherReport
     src/model/entities/ForecastData.h
     src/model/entities/WeatherData.h
     src/model/entities/WeatherService.h
+    src/model/services/cityapi.cpp
+    src/model/services/cityapi.h
+    src/model/services/WeatherAPI.cpp
+    src/model/services/weatherapi.h
 )
 
 
@@ -37,7 +41,13 @@ qt_add_qml_module(appWeatherReport
         view/SettingsView.qml
     RESOURCES
         images/rain.png
+        images/sun.png
 
+
+        images/humidity.png
+        images/precipitation.png
+        images/pressure.png
+        images/windSpeed.png
 
 )
 

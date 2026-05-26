@@ -87,6 +87,7 @@ Window {
         onPositionChanged: {
             root.x += mouse.x - clickPos.x
             root.y += mouse.y - clickPos.y
+
         }
     }
 
