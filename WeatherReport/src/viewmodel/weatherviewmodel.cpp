@@ -50,6 +50,7 @@ void WeatherViewModel::addCityToFavorites(const QString &city)
     emit favoriteCitiesChanged();
 }
 
+
 void WeatherViewModel::removeCityFromFavorites(const QString &city)
 {
     QString trimmedCity = city.trimmed();

@@ -29,7 +29,6 @@ qt_add_executable(appWeatherReport
 qt_add_qml_module(appWeatherReport
     URI WeatherReport
     VERSION 1.0
-    RESOURCE_PREFIX "/"
     QML_FILES
         view/Main.qml
 
