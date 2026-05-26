@@ -1,22 +1,64 @@
-#include "weatherviewmodel.h"
-#include <QDebug>
-WeatherViewModel::WeatherViewModel(QObject *parent)
-    : QObject(parent), m_visibleCityName("Москва (Ожидание поиска)") {
+
+#include "WeatherViewModel.h"
+#include <QSettings>
+WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject *parent)
+    : QObject(parent)
+    , m_modelService(service)
+{
+    loadFavoritesFromConfig();
+}
+namespace {
+const QString ORGANIZATION = "CurseCorp";
+const QString APPLICATION  = "WeatherReport";
+const QString KEY_FAVORITES = "favorites";
+}
+void WeatherViewModel::loadWeather(const QString& city) {
+    if (city.isEmpty()) return;
+
+   WeatherData rawData = m_modelService->getWeatherByCityName(city); //();
+
+    m_cityNameText = rawData.cityName;
+    m_tempText = QString::number(rawData.temperatureCurrent, 'f', 1) + " °C";
+    m_humidity = QString::number(rawData.humidity) + " %";
+    m_description =rawData.description;
+    m_windSpeed = QString::number(rawData.windSpeedMs) + "М/С";
+    m_pressure = QString::number(rawData.pressure) + "мм рт.ст.";
+    m_precipitation = QString::number(rawData.precipitationMm) + "ММ";
+    m_minTemp = QString::number(rawData.temperatureMin, 'f', 1) + " °C";
+    m_maxTemp = QString::number(rawData.temperatureMax, 'f', 1) + " °C";
+
+
+    emit weatherUpdated();
+}
+void WeatherViewModel::loadFavoritesFromConfig()
+{
+    QSettings settings(ORGANIZATION, APPLICATION);
+    m_favoriteCities = settings.value(KEY_FAVORITES).toStringList();
+    emit favoriteCitiesChanged();
 }
 
-QString WeatherViewModel::visibleCityName() const {
-    return m_visibleCityName;
+void WeatherViewModel::addCityToFavorites(const QString &city)
+{
+    QString trimmedCity = city.trimmed();
+    if (trimmedCity.isEmpty() || m_favoriteCities.contains(trimmedCity)) {
+        return;
+    }
+    m_favoriteCities.append(trimmedCity);
+    QSettings settings(ORGANIZATION, APPLICATION);
+    settings.setValue(KEY_FAVORITES, m_favoriteCities);
+
+    emit favoriteCitiesChanged();
 }
 
-void WeatherViewModel::searchCity(const QString &cityName) {
-    if (cityName.isEmpty()) return;
 
+void WeatherViewModel::removeCityFromFavorites(const QString &city)
+{
+    QString trimmedCity = city.trimmed();
+    if (!m_favoriteCities.contains(trimmedCity)) return;
 
-    qDebug() << "ViewModel поймала поиск для города:" << cityName;
+    m_favoriteCities.removeAll(trimmedCity);
+    QSettings settings(ORGANIZATION, APPLICATION);
+    settings.setValue(KEY_FAVORITES, m_favoriteCities);
 
- 
-    m_visibleCityName = cityName.toUpper() + " (+22°C, Симуляция)";
-
-
-    emit visibleCityNameChanged();
+    emit favoriteCitiesChanged();
 }

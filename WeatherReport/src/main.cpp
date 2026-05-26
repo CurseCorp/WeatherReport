@@ -1,16 +1,22 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QQmlContext> // <-- ОБЯЗАТЕЛЬНО ДОБАВЬ ЭТОТ ИНКЛЮД
-#include "viewmodel/WeatherViewModel.h"
+#include <QQmlContext>
+#include <memory>
 
+#include "model/entities/WeatherService.h"
+#include "viewmodel/WeatherViewModel.h"
+#include "model/services/weatherapi.h"
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
+    auto globalWeatherService = std::make_shared<WeatherApi>();
+
+    auto weatherViewModel = std::make_unique<WeatherViewModel>(globalWeatherService);
 
     QQmlApplicationEngine engine;
-    WeatherViewModel viewModel;
-    engine.rootContext()->setContextProperty("weatherViewModel", &viewModel);
 
-    const QUrl url(u"qrc:/WeatherReport/view/Main.qml"_qs);
+    engine.rootContext()->setContextProperty("weatherViewModel", weatherViewModel.get());
+
+    const QUrl url(QStringLiteral("qrc:/WeatherReport/view/Main.qml"));
     engine.load(url);
 
     return app.exec();
