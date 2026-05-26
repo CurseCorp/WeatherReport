@@ -2,14 +2,16 @@
 #define CITY_H
 
 #include <QString>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-//#include <QSqlDatabase>
-//#include <QSqlQuery>
 
-class City : public QObject
+struct City
 {
-    Q_OBJECT
-
+    int id = 0;
+    QString name;
+    QString displayName;
+    QString country;
+    double latitude = 0.0;
+    double longitude = 0.0;
+    bool isValid = false;
 };
+
 #endif

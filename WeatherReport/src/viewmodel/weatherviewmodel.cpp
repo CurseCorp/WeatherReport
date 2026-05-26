@@ -1,7 +1,7 @@
 
 #include "WeatherViewModel.h"
 #include <QSettings>
-WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherService> service, QObject *parent)
+WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject *parent)
     : QObject(parent)
     , m_modelService(service)
 {
@@ -15,13 +15,13 @@ const QString KEY_FAVORITES = "favorites";
 void WeatherViewModel::loadWeather(const QString& city) {
     if (city.isEmpty()) return;
 
-    WeatherData rawData = m_modelService->fetchCurrentWeather(city.toStdString());
+   WeatherData rawData = m_modelService->getWeatherByCityName(city); //();
 
-    m_cityNameText = QString::fromStdString(rawData.cityName);
-    m_tempText = QString::number(rawData.temperature, 'f', 1) + " °C";
+    m_cityNameText = rawData.cityName;
+    m_tempText = QString::number(rawData.temperatureCurrent, 'f', 1) + " °C";
     m_humidity = QString::number(rawData.humidity) + " %";
-    m_description = QString::fromStdString(rawData.description);
-    m_windSpeed = QString::number(rawData.windSpeed) + "км/ч";
+    m_description =rawData.description;
+    m_windSpeed = QString::number(rawData.windSpeedMs) + "М/С";
     m_pressure = QString::number(rawData.pressure) + "мм рт.ст.";
 
 
