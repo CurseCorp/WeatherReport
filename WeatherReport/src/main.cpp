@@ -5,10 +5,10 @@
 
 #include "model/entities/WeatherService.h"
 #include "viewmodel/WeatherViewModel.h"
-
+#include "model/services/weatherapi.h"
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
-    auto globalWeatherService = std::make_shared<WeatherService>();
+    auto globalWeatherService = std::make_shared<WeatherApi>();
 
     auto weatherViewModel = std::make_unique<WeatherViewModel>(globalWeatherService);
 

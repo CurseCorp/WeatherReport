@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <memory>
-#include "../model/entities/WeatherService.h"
+#include "../model/services/weatherapi.h"
 class WeatherViewModel : public QObject
 {
     Q_OBJECT
@@ -16,7 +16,7 @@ class WeatherViewModel : public QObject
     Q_PROPERTY(QString windSpeed READ windSpeed NOTIFY weatherUpdated)
     Q_PROPERTY(QStringList favoriteCities READ favoriteCities NOTIFY favoriteCitiesChanged)
 public:
-   explicit WeatherViewModel(std::shared_ptr<WeatherService> service, QObject *parent = nullptr);
+   explicit WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject *parent = nullptr);
     QString cityNameText() const { return m_cityNameText; }
     QString tempText() const { return m_tempText; }
     QString humidity() const {return m_humidity;   }
@@ -32,7 +32,7 @@ signals:
     void weatherUpdated();
     void favoriteCitiesChanged();
 private:
-    std::shared_ptr<WeatherService> m_modelService;
+    std::shared_ptr<WeatherApi> m_modelService;
     QString m_cityNameText = "—";
     QString m_tempText = "0°C";
     QString m_humidity = "0%";
@@ -41,6 +41,7 @@ private:
     QString m_windSpeed = "28";
     QStringList m_favoriteCities;
     void loadFavoritesFromConfig();
+
 };
 
 #endif // WEATHERVIEWMODEL_H
