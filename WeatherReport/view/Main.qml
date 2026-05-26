@@ -7,38 +7,38 @@ Window {
     QtObject {
         id: weatherViewModel
 
-        property string cityName:    "Старый Оскол, Россия"
-        property string weekday:    "Понедельник"
-        property string day:    "25"
-        property string month: "Май"
-        property string temperature: "+18°C"
-        property string feelsLike:   "+15°C"
-        property string description: "Переменная облачность"
-        property string iconCode:    "02d"
-        property string humidity:    "65%"
-        property string windSpeed:   "4.2 м/с"
-        property string pressure:    "1013 hPa"
-        property string visibility:  "10 км"
-        property bool   isCelsius:   true
-        property bool   isLoading:   false
-        property bool   isOffline:   false
-        property string lastUpdated: "14:32"
+        property string cityName:         "Старый Оскол, Россия"
+        property string weekday:          "Понедельник"
+        property string day:              "25"
+        property string month:            "Май"
+        property string temperature:      "+18°C"
+        property string feelsLike:        "+15°C"
+        property string description:      "Переменная облачность"
+        property string iconCode:         "02d"
+        property string humidity:         "65%"
+        property string windSpeed:        "4.2 м/с"
+        property string pressure:         "1013 hPa"
+        property string precipitation:    "< 1.3 мм"
+        property bool   isCelsius:         true
+        property bool   isLoading:         false
+        property bool   isOffline:         false
+        property string lastUpdated:      "14:32"
+
 
         property ListModel forecastModel: ListModel {
-            ListElement { dayName:"Пн"; date:"26 мая"; iconCode:"01d"; tempMax:"+21°"; tempMin:"+12°"; humidity:"55%" }
-            ListElement { dayName:"Вт"; date:"27 мая"; iconCode:"10d"; tempMax:"+17°"; tempMin:"+10°"; humidity:"80%" }
-            ListElement { dayName:"Ср"; date:"28 мая"; iconCode:"11d"; tempMax:"+14°"; tempMin:"+9°";  humidity:"90%" }
-            ListElement { dayName:"Чт"; date:"29 мая"; iconCode:"03d"; tempMax:"+16°"; tempMin:"+11°"; humidity:"70%" }
-            ListElement { dayName:"Пт"; date:"30 мая"; iconCode:"01d"; tempMax:"+23°"; tempMin:"+14°"; humidity:"45%" }
-            ListElement { dayName:"Сб"; date:"31 мая"; iconCode:"01d"; tempMax:"+23°"; tempMin:"+14°"; humidity:"45%" }
-            ListElement { dayName:"Вс"; date:"32 мая"; iconCode:"01d"; tempMax:"+23°"; tempMin:"+14°"; humidity:"45%" }
+            ListElement { dayName:"Пн"; date:"26 мая"; iconCode:"01d"; tempMax:"+21°"; tempMin:"+12°" }
+            ListElement { dayName:"Вт"; date:"27 мая"; iconCode:"10d"; tempMax:"+17°"; tempMin:"+10°" }
+            ListElement { dayName:"Ср"; date:"28 мая"; iconCode:"11d"; tempMax:"+14°"; tempMin:"+9°" }
+            ListElement { dayName:"Чт"; date:"29 мая"; iconCode:"03d"; tempMax:"+16°"; tempMin:"+11°" }
+            ListElement { dayName:"Пт"; date:"30 мая"; iconCode:"01d"; tempMax:"+23°"; tempMin:"+14°" }
+            ListElement { dayName:"Сб"; date:"31 мая"; iconCode:"01d"; tempMax:"+23°"; tempMin:"+14°" }
+            ListElement { dayName:"Вс"; date:"32 мая"; iconCode:"01d"; tempMax:"+23°"; tempMin:"+14°" }
 
 
         }
         property ListModel favoritesModel: ListModel {
             ListElement { cityName:"Москва";    country:"RU"; temperature:"+18°" }
-            ListElement { cityName:"Лондон";    country:"GB"; temperature:"+12°" }
-            ListElement { cityName:"Токио";     country:"JP"; temperature:"+26°" }
+
         }
         property ListModel searchSuggestModel: ListModel {}
 
@@ -50,19 +50,22 @@ Window {
         function toggleFavorite()   {}
     }
 
-
+    property int counterbutton: 0
     // Цветовая палитра
-    readonly property color bgDeep:      "#0B0F1A"
-    readonly property color bgCard:      "#131929"
+    readonly property color bgDeep:      "#373641"
+    readonly property color bgCard:      "#353333"
     readonly property color bgCardHover: "#1A2238"
     readonly property color accent:      "#4FC3F7"
     readonly property color accentWarm:  "#FFB347"
     readonly property color textPrimary: "#E8EFF7"
     readonly property color textSecond:  "#7A8FA8"
-    readonly property color border:      "#1E2D42"
+    readonly property color border:      "#353333"
     readonly property color danger:      "#EF5350"
     readonly property color success:     "#66BB6A"
 
+
+    // Режим добавления избранного
+    property bool addMode: false
 
     id: root
     width: 1200
@@ -71,7 +74,7 @@ Window {
     minimumHeight: 600
     visible: true
     title: "WeatherApp"
-    color: "#111111"
+    color: root.bgDeep
     flags: Qt.Window | Qt.FramelessWindowHint
     MouseArea {
         id: dragArea
@@ -90,11 +93,12 @@ Window {
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
+
 //Заголовок ---------------------------------------------------
         Rectangle {
             Layout.fillWidth: true
             height: 54
-            color: "transparent"
+            color: root.bgCard
 
             RowLayout {
                 anchors.fill: parent
@@ -127,8 +131,6 @@ Window {
                     height: 22
                     radius: 11
                     color: Qt.rgba(0.94, 0.33, 0.31, 0.18)
-                    border.color: root.danger
-                    border.width: 1
                     Text {
                         id: offlineTxt
                         anchors.centerIn: parent
@@ -181,14 +183,6 @@ Window {
                     onClicked: Qt.quit()
                 }
             }
-
-            Rectangle {
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: 1
-                color: root.border
-            }
         }
 //-------Левый бар с настройками------------------------------------------
         RowLayout {
@@ -198,7 +192,7 @@ Window {
             Rectangle {
                 Layout.preferredWidth: 40
                 Layout.fillHeight: true
-                color: Qt.rgba(1, 1, 1, 0.02)
+                color: root.bgCard
 
                 Column {
                     anchors.top: parent.top
@@ -217,7 +211,7 @@ Window {
             Rectangle {
                 anchors.right: parent.right
                 height: 700
-                color: root.border
+                color: root.bgCard
             }
         }
         // Основа
@@ -230,9 +224,7 @@ Window {
             Layout.preferredWidth: 600
             height: 100
             radius: 14
-            color: root.bgCard
-            border.color: root.border
-            border.width: 1
+            color: "transparent"
             clip: true
             Text {
                 anchors.top: parent.top
@@ -273,8 +265,6 @@ Window {
             height: 260
             radius: 14
             color: root.bgCard
-            border.color: root.border
-            border.width: 1
             clip: true
 
             BusyIndicator {
@@ -318,7 +308,7 @@ Window {
                 }
 
                 Image {
-                    source: "rain.png"
+                    source: getWeatherEmoji(weatherViewModel.iconCode)
 
                     width: 400
                     height: 400
@@ -344,40 +334,43 @@ Window {
                 height: 260
                 radius: 14
                 color: root.bgCard
-                border.color: root.border
-                border.width: 1
                 clip: true
                 GridLayout {
                     columns: 1
-                    rowSpacing: 5
-                    columnSpacing: 5
-
+                    rowSpacing: 3
+                    columnSpacing: 3
+                    anchors.left: parent.left
+                    anchors.leftMargin: 10
                     DetailCard {
-                        icon: "💧"
+                        Layout.alignment: Qt.AlignHCenter
+                        icon: "humidity.png"
                         label: "Влажность"
                         value: typeof weatherViewModel !== "undefined"
                                ? weatherViewModel.humidity : "--"
                         color: root.accent
                     }
                     DetailCard {
-                        icon: "💨"
+                        Layout.alignment: Qt.AlignHCenter
+                        icon: "windSpeed.png"
                         label: "Ветер"
                         value: typeof weatherViewModel !== "undefined"
                                ? weatherViewModel.windSpeed : "--"
                         color: root.success
                     }
                     DetailCard {
-                        icon: "🌡"
+                        Layout.alignment: Qt.AlignHCenter
+                        icon: "pressure.png"
                         label: "Давление"
                         value: typeof weatherViewModel !== "undefined"
                                ? weatherViewModel.pressure : "--"
                         color: root.accentWarm
                     }
                     DetailCard {
-                        icon: "👁"
-                        label: "Видимость"
+                        Layout.alignment: Qt.AlignHCenter
+                        icon: "precipitation.png"
+                        label: "Осадки"
                         value: typeof weatherViewModel !== "undefined"
-                               ? weatherViewModel.visibility : "--"
+                               ? weatherViewModel.precipitation : "--"
                         color: "#CE93D8"
                     }
                 }
@@ -393,8 +386,6 @@ Window {
                 height: 230
                 radius: 14
                 color: root.bgCard
-                border.color: root.border
-                border.width: 1
                 clip: true
                 Text {
                     anchors.top: parent.top
@@ -414,7 +405,6 @@ Window {
                     ScrollBar.horizontal.policy: ScrollBar.AsNeeded
                     ScrollBar.vertical.policy: ScrollBar.AlwaysOff
                     clip: true
-                    contentHeight: rowContent.height
 
                     Row {
                         spacing: 14
@@ -430,7 +420,6 @@ Window {
                                 iconCode: model.iconCode
                                 tempMax:  model.tempMax
                                 tempMin:  model.tempMin
-                                humidity: model.humidity
 
                                 opacity: 0
                                 Component.onCompleted: {
@@ -468,89 +457,190 @@ Window {
             //поиск
 
             Rectangle {
+                id: searchAreaWrapper
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.leftMargin: 755
                 anchors.topMargin: 115
 
-                Layout.preferredWidth: 400
+                Layout.preferredWidth: root.addMode ? 520 : 400
+                width: root.addMode ? 520 : 400
                 height: 40
                 radius: 14
-                color: root.bgCard
-                border.color: root.border
-                border.width: 1
-                clip: true
+                color: "transparent"
 
+                Behavior on width {
+                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                }
+
+                // Поисковая строка
                 Rectangle {
-                    id: searchBox
-                    anchors.fill: parent
-                    radius: 10
-                    color: root.bgCard
-                    border.color: searchInput.activeFocus ? root.accent : root.border
-                    border.width: searchInput.activeFocus ? 2 : 1
+                    id: searchBoxOuter
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: root.addMode ? addFavBtn.left : parent.right
+                    anchors.rightMargin: root.addMode ? 8 : 0
+                    height: 40
+                    radius: 14
+                    color: root.addMode ? "#EDEAEA" : root.bgCard
+                    border.color: root.addMode
+                                  ? (searchInput.activeFocus ? root.accent : root.border)
+                                  : root.bgCard
+                    border.width: root.addMode ? (searchInput.activeFocus ? 2 : 1) : 1
+                    clip: true
+
+                    Behavior on color {
+                        ColorAnimation { duration: 200 }
+                    }
                     Behavior on border.color {
                         ColorAnimation { duration: 200 }
                     }
 
-                    RowLayout {
+                    Rectangle {
+                        id: searchBox
                         anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 8
-                        spacing: 8
+                        radius: 14
+                        color: "transparent"
 
-                        Text {
-                            text: "🔍"
-                            font.pixelSize: 14
-                            color: root.textSecond
-                        }
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 8
+                            spacing: 8
 
-                        TextField {
-                            id: searchInput
-                            Layout.fillWidth: true
-                            placeholderText: "Введите город..."
-                            font.pixelSize: 14
-                            color: root.textPrimary
-                            background: Item {}
-                            leftPadding: 0
-                            placeholderTextColor: root.textSecond
-                            onTextChanged: {
-                                if (text.length >= 2 && typeof weatherViewModel !== "undefined")
-                                    weatherViewModel.searchCity(text)
-                                suggestPopup.visible = text.length >= 2
-                            }
-                            Keys.onReturnPressed: {
-                                suggestPopup.visible = false
-                                if (typeof weatherViewModel !== "undefined")
-                                    weatherViewModel.searchCity(text)
-                            }
-                            Keys.onEscapePressed: {
-                                suggestPopup.visible = false
-                                focus = false
-                            }
-                        }
-
-                        Rectangle {
-                            width: 22
-                            height: 22
-                            radius: 11
-                            color: clearHover.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                            visible: searchInput.text.length > 0
                             Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 11
-                                color: root.textSecond
+                                text: "🔍"
+                                font.pixelSize: 14
+                                color: root.addMode ? root.textSecond : Qt.rgba(0.47, 0.56, 0.66, 0.5)
+                                Behavior on color { ColorAnimation { duration: 200 } }
                             }
-                            MouseArea {
-                                id: clearHover
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    searchInput.text = ""
+
+                            TextField {
+                                id: searchInput
+                                Layout.fillWidth: true
+                                placeholderText: root.addMode ? "Введите город для добавления..." : "Нажмите +"
+                                font.pixelSize: 14
+                                color: root.addMode ? root.textPrimary : root.textSecond
+                                background: Item {}
+                                leftPadding: 0
+                                placeholderTextColor: root.addMode ? root.textSecond : Qt.rgba(0.47, 0.56, 0.66, 0.45)
+                                enabled: root.addMode
+                                readOnly: !root.addMode
+
+                                Behavior on color { ColorAnimation { duration: 200 } }
+
+                                onTextChanged: {
+                                    if (!root.addMode) return
+                                    if (text.length >= 2 && typeof weatherViewModel !== "undefined")
+                                        weatherViewModel.searchCity(text)
+                                    suggestPopup.visible = text.length >= 2
+                                }
+                                Keys.onReturnPressed: {
+                                    if (!root.addMode) return
                                     suggestPopup.visible = false
+                                    if (typeof weatherViewModel !== "undefined")
+                                        weatherViewModel.searchCity(text)
+                                }
+                                Keys.onEscapePressed: {
+                                    suggestPopup.visible = false
+                                    focus = false
+                                    root.addMode = false
+                                    text = ""
                                 }
                             }
+
+                            Rectangle {
+                                width: 22
+                                height: 22
+                                radius: 11
+                                color: clearHover.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                                visible: searchInput.text.length > 0 && root.addMode
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "✕"
+                                    font.pixelSize: 11
+                                    color: root.textSecond
+                                }
+                                MouseArea {
+                                    id: clearHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        searchInput.text = ""
+                                        suggestPopup.visible = false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Кнопка "Добавить" — появляется в addMode
+                Rectangle {
+                    id: addFavBtn
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    width: root.addMode ? 106 : 0
+                    height: 40
+                    radius: 14
+                    clip: true
+                    color: addBtnHover.containsMouse
+                           ? Qt.rgba(0.40, 0.76, 0.42, 0.25)
+                           : Qt.rgba(0.40, 0.73, 0.42, 0.18)
+                    border.color: root.success
+                    border.width: 1
+                    opacity: root.addMode ? 1 : 0
+
+                    Behavior on width   { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 5
+                        visible: root.addMode
+                        Text {
+                            text: "✓"
+                            font.pixelSize: 14
+                            font.weight: Font.Medium
+                            color: root.success
+                        }
+                        Text {
+                            text: "Добавить"
+                            font.pixelSize: 13
+                            font.weight: Font.Medium
+                            color: root.success
+                        }
+                    }
+
+                    MouseArea {
+                        id: addBtnHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (!root.addMode) return
+                            var cityText = searchInput.text.trim()
+                            if (cityText.length === 0) return
+                            if (typeof weatherViewModel !== "undefined") {
+                                var alreadyExists = false
+                                for (var i = 0; i < weatherViewModel.favoritesModel.count; i++) {
+                                    if (weatherViewModel.favoritesModel.get(i).cityName === cityText) {
+                                        alreadyExists = true
+                                        break
+                                    }
+                                }
+                                if (!alreadyExists) {
+                                    weatherViewModel.favoritesModel.append({
+                                        cityName: cityText,
+                                        country: "—",
+                                        temperature: "—"
+                                    })
+                                }
+                            }
+                            searchInput.text = ""
+                            suggestPopup.visible = false
+                            root.addMode = false
                         }
                     }
                 }
@@ -559,10 +649,10 @@ Window {
                 Rectangle {
                     id: suggestPopup
                     visible: false
-                    anchors.top: searchBox.bottom
+                    anchors.top: searchBoxOuter.bottom
                     anchors.topMargin: 6
-                    anchors.left: searchBox.left
-                    anchors.right: searchBox.right
+                    anchors.left: searchBoxOuter.left
+                    anchors.right: searchBoxOuter.right
                     height: Math.min(suggestList.count * 44, 200)
                     radius: 10
                     color: root.bgCard
@@ -639,8 +729,6 @@ Window {
                 height: 240
                 radius: 14
                 color: root.bgCard
-                border.color: root.border
-                border.width: 1
                 clip: true
 
                 Rectangle {
@@ -784,8 +872,6 @@ Window {
                 height: 520
                 radius: 14
                 color: root.bgCard
-                border.color: root.border
-                border.width: 1
                 clip: true
                 ColumnLayout {
                     anchors.fill: parent
@@ -821,6 +907,7 @@ Window {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
                         clip: true
 
                         ColumnLayout {
@@ -835,24 +922,42 @@ Window {
                                     country:     model.country
                                     temperature: model.temperature
                                     itemIndex:   index
+                                    appRoot: root
                                     onSelectCity: {
-                                        if (typeof weatherViewModel !== "undefined")
+                                        if (typeof weatherViewModel !== "undefined") {
+                                            weatherViewModel.cityName = cityName
                                             weatherViewModel.selectCity(cityName, country)
-                                        tabBar.currentIndex = 0
+                                        }
                                     }
                                     onRemoveCity: {
                                         if (typeof weatherViewModel !== "undefined")
                                             weatherViewModel.removeFavorite(itemIndex)
+                                        if (appRoot.counterbutton > 0){
+                                            appRoot.counterbutton --
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 TitleButton {
-                    icon: "+"
-                    tooltip: "Добавить"
-                    accentColor: root.danger
-                    onClicked: Qt.quit()
+                    visible: counterbutton<6
+
+
+                    icon: root.addMode ? "✕" : "+"
+                    tooltip: root.addMode ? "Отмена" : "Добавить город"
+                    accentColor: root.addMode ? root.danger : root.success
+                    onClicked: {
+
+                        root.addMode = !root.addMode
+                        if (!root.addMode) {
+                            searchInput.text = ""
+                            suggestPopup.visible = false
+                        } else {
+                            counterbutton ++
+                            searchInput.forceActiveFocus()
+                        }
+                    }
                 }
 
 
@@ -888,8 +993,8 @@ Window {
         if (!code) return "🌡"
         var c = code.substring(0, 2)
         var map = {
-            "01": "☀️",
-            "02": "⛅",
+            "01": "sun.png",
+            "02": "rain.png",
             "03": "☁️",
             "04": "☁️",
             "09": "🌧",

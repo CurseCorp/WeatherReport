@@ -3,11 +3,12 @@ import QtQuick.Layouts 1.15
 
 Rectangle {
     id: item
-
+    property var appRoot
     property string cityName:    "—"
     property string country:     "—"
     property string temperature: "--°"
     property int    itemIndex:   0
+
 
     signal selectCity()
     signal removeCity()
@@ -15,13 +16,15 @@ Rectangle {
     width:  parent ? parent.width : 400
     height: 64
     radius: 12
-    color:  rowHover.containsMouse ? "#1A2238" : "#131929"
-    border.color: rowHover.containsMouse ? "#4FC3F7" : "#1E2D42"
+    color:  rowHover.containsMouse ? "#3A3A3A" : "#353333"
+    border.color: rowHover.containsMouse ? "#807C7C" : "#807C7C"
     border.width: 1
+    opacity: 1
+
+    Component.onCompleted: opacity = 1
 
     Behavior on color        { ColorAnimation { duration: 160 } }
     Behavior on border.color { ColorAnimation { duration: 160 } }
-
     // Тень
     Rectangle {
         anchors.fill: parent; anchors.margins: -1
@@ -34,12 +37,6 @@ Rectangle {
     RowLayout {
         anchors { fill: parent; leftMargin: 16; rightMargin: 12 }
         spacing: 12
-
-        Rectangle {
-            width: 38; height: 38; radius: 10
-            color: Qt.rgba(0.31, 0.76, 0.97, 0.12)
-            Text { anchors.centerIn: parent; text: "📍"; font.pixelSize: 18 }
-        }
 
         ColumnLayout {
             Layout.fillWidth: true; spacing: 2

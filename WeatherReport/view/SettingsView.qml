@@ -10,14 +10,14 @@ Item {
     signal close()
 
     // ── Цвета (повторяем локально, т.к. это отдельный файл) ──────────
-    readonly property color bgDeep:      "#0B0F1A"
-    readonly property color bgCard:      "#131929"
+    readonly property color bgDeep:      "#373641"
+    readonly property color bgCard:      "#353333"
     readonly property color bgCardHover: "#1A2238"
     readonly property color accent:      "#4FC3F7"
     readonly property color accentWarm:  "#FFB347"
     readonly property color textPrimary: "#E8EFF7"
     readonly property color textSecond:  "#7A8FA8"
-    readonly property color border:      "#1E2D42"
+    readonly property color border:      "#353333"
     readonly property color danger:      "#EF5350"
     readonly property color success:     "#66BB6A"
 

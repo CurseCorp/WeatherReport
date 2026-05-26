@@ -3,7 +3,6 @@ import QtQuick.Layouts 1.15
 
 Rectangle {
     id: card
-
     property string dayName:  "Пн"
     property string dateStr:  "1 янв"
     property string iconCode: "01d"
@@ -14,8 +13,8 @@ Rectangle {
     width: 80
     height: 180
     radius: 14
-    color: hoverArea.containsMouse ? "#1A2238" : "#131929"
-    border.color: hoverArea.containsMouse ? "#4FC3F7" : "#1E2D42"
+    color: hoverArea.containsMouse ? "#3A3A3A" : "#353333"
+    border.color: hoverArea.containsMouse ? "#807C7C" : "#807C7C"
     border.width: 1
 
     Behavior on color        { ColorAnimation { duration: 180 } }
@@ -23,17 +22,15 @@ Rectangle {
 
     // Тень — смещённый прямоугольник позади карточки
     Rectangle {
-        anchors.fill: parent
-        anchors.margins: -2
-        radius: parent.radius + 2
-        color: Qt.rgba(0, 0, 0, hoverArea.containsMouse ? 0.45 : 0.25)
-        z: 1
-        transform: Translate { y: hoverArea.containsMouse ? 6 : 3 }
-        Behavior on y { NumberAnimation { duration: 180 } }
+        anchors.fill: parent; anchors.margins: -1
+        radius: parent.radius + 1
+        color: Qt.rgba(0, 0, 0, 0.28)
+        z: -1
+        transform: Translate { y: 3 }
     }
 
     // Анимация поднятия при наведении
-    Behavior on y { SmoothedAnimation { velocity: 200 } }
+    Behavior on y { SmoothedAnimation { velocity: 100 } }
 
     ColumnLayout {
         anchors { fill: parent; margins: 10 }
