@@ -52,3 +52,6 @@
 * Компилятор с поддержкой C++17 (GCC, Clang, MSVC)
 * Установленный Qt 6 (компоненты qml, quick, network)
 * Система сборки CMake (версия 3.16 и выше)
+
+## Макет приложения
+<img width="1805" height="969" alt="image" src="https://github.com/user-attachments/assets/d9c1ad8a-52b7-43d3-9292-65414b3920bc" />
