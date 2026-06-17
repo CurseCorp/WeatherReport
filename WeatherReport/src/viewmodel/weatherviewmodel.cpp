@@ -1,5 +1,5 @@
-
 #include "WeatherViewModel.h"
+#include "CacheManager.h"
 #include <QSettings>
 WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject *parent)
     : QObject(parent)
@@ -15,20 +15,18 @@ const QString KEY_FAVORITES = "favorites";
 void WeatherViewModel::loadWeather(const QString& city) {
     if (city.isEmpty()) return;
 
-   WeatherData rawData = m_modelService->getWeatherByCityName(city); //();
+    WeatherData data;
 
-    m_cityNameText = rawData.cityName;
-    m_tempText = QString::number(rawData.temperatureCurrent, 'f', 1) + " °C";
-    m_humidity = QString::number(rawData.humidity) + " %";
-    m_description =rawData.description;
-    m_windSpeed = QString::number(rawData.windSpeedMs) + "М/С";
-    m_pressure = QString::number(rawData.pressure) + "мм рт.ст.";
-    m_precipitation = QString::number(rawData.precipitationMm) + "ММ";
-    m_minTemp = QString::number(rawData.temperatureMin, 'f', 1) + " °C";
-    m_maxTemp = QString::number(rawData.temperatureMax, 'f', 1) + " °C";
+    if (CacheManager::load(city, data)) {
+        updateUIData(data);
+        return;
+    }
 
+    data = m_modelService->getWeatherByCityName(city);
 
-    emit weatherUpdated();
+    CacheManager::save(city, data);
+    updateUIData(data);
+
 }
 void WeatherViewModel::loadFavoritesFromConfig()
 {
@@ -61,4 +59,17 @@ void WeatherViewModel::removeCityFromFavorites(const QString &city)
     settings.setValue(KEY_FAVORITES, m_favoriteCities);
 
     emit favoriteCitiesChanged();
+}
+
+void WeatherViewModel::updateUIData(const WeatherData &data) {
+    m_cityNameText = data.cityName;
+    m_tempText = QString::number(data.temperatureCurrent, 'f', 1) + " °C";
+    m_humidity = QString::number(data.humidity) + " %";
+    m_description = data.description;
+    m_windSpeed = QString::number(data.windSpeedMs) + "М/С";
+    m_pressure = QString::number(data.pressure) + "мм рт.ст.";
+    m_precipitation = QString::number(data.precipitationMm) + "ММ";
+    m_minTemp = QString::number(data.temperatureMin, 'f', 1) + " °C";
+    m_maxTemp = QString::number(data.temperatureMax, 'f', 1) + " °C";
+    emit weatherUpdated();
 }

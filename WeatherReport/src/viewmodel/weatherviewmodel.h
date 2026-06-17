@@ -50,6 +50,7 @@ private:
     QString m_maxTemp = "0°C";
     QStringList m_favoriteCities;
     void loadFavoritesFromConfig();
+    void updateUIData(const WeatherData &);
 
 };
 
