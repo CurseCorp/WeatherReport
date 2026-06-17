@@ -27,7 +27,9 @@ QByteArray WeatherApi::syncGet(const QString &cityName)
     QUrlQuery query;
     query.addQueryItem("key", m_apiKey);
     query.addQueryItem("q", cityName);
-    query.addQueryItem("days", "1");
+    query.addQueryItem("days", "3");
+    query.addQueryItem("aqi", "no");
+    query.addQueryItem("alerts", "no");
     url.setQuery(query);
 
     qDebug() << "Запрос к WeatherAPI:" << url.toString();
@@ -42,7 +44,7 @@ QByteArray WeatherApi::syncGet(const QString &cityName)
     QByteArray responseData;
     if (reply->error() == QNetworkReply::NoError) {
         responseData = reply->readAll();
-        qDebug() << "Ответ API получен";
+        qDebug() << "Ответ API получен, размер:" << responseData.size();
     } else {
         qDebug() << "Ошибка API:" << reply->errorString();
         emit errorOccurred(reply->errorString());
@@ -90,17 +92,47 @@ WeatherData WeatherApi::parseWeatherJson(const QByteArray &rawData)
     QJsonObject condition = current["condition"].toObject();
     result.description = condition["text"].toString();
 
+
+    result.dailyForecasts.clear();
+    result.hourlyForecast.clear();
+
     if (obj.contains("forecast")) {
         QJsonObject forecast = obj["forecast"].toObject();
         QJsonArray forecastDay = forecast["forecastday"].toArray();
 
         if (!forecastDay.isEmpty()) {
-            QJsonObject day = forecastDay[0].toObject();
-            QJsonObject dayData = day["day"].toObject();
 
-            result.temperatureMin = dayData["mintemp_c"].toDouble();
-            result.temperatureMax = dayData["maxtemp_c"].toDouble();
-            result.precipitationMm = dayData["totalprecip_mm"].toDouble();
+            QJsonObject firstDay = forecastDay[0].toObject();
+            QJsonObject firstDayData = firstDay["day"].toObject();
+            result.temperatureMin = firstDayData["mintemp_c"].toDouble();
+            result.temperatureMax = firstDayData["maxtemp_c"].toDouble();
+            result.precipitationMm = firstDayData["totalprecip_mm"].toDouble();
+
+            for (const auto &dayItem : forecastDay) {
+                QJsonObject dayObj = dayItem.toObject();
+                QJsonObject dayData = dayObj["day"].toObject();
+
+                DailyForecast daily;
+                daily.date = dayObj["date"].toString();
+
+                QJsonArray hourArray = dayObj["hour"].toArray();
+                for (const auto &hourItem : hourArray) {
+                    QJsonObject hourObj = hourItem.toObject();
+
+                    HourlyData hourly;
+                    hourly.time = hourObj["time"].toString();
+                    hourly.temp = hourObj["temp_c"].toDouble();
+                    hourly.icon = hourObj["condition"].toObject()["icon"].toString();
+
+                    daily.hourly.append(hourly);
+                    result.hourlyForecast.append(hourly);
+                }
+
+                result.dailyForecasts.append(daily);
+            }
+
+            qDebug() << "  Дней в прогнозе:" << result.dailyForecasts.size();
+            qDebug() << "  Всего почасовых записей:" << result.hourlyForecast.size();
         }
     }
 
@@ -108,12 +140,15 @@ WeatherData WeatherApi::parseWeatherJson(const QByteArray &rawData)
 
     qDebug() << "Погода для города:" << result.cityName;
     qDebug() << "  Текущая:" << result.temperatureCurrent << "°C";
+    qDebug() << "  Ощущается как:" << result.feelsLike << "°C";
     qDebug() << "  Мин/Макс:" << result.temperatureMin << "/" << result.temperatureMax << "°C";
     qDebug() << "  Описание:" << result.description;
     qDebug() << "  Влажность:" << result.humidity << "%";
     qDebug() << "  Ветер:" << result.windSpeedMs << "м/с";
     qDebug() << "  Давление:" << result.pressure << "hPa";
     qDebug() << "  Осадки:" << result.precipitationMm << "мм";
+    qDebug() << "  Количество дней в прогнозе:" << result.dailyForecasts.size();
+    qDebug() << "  Всего часов в прогнозе:" << result.hourlyForecast.size();
 
     return result;
 }

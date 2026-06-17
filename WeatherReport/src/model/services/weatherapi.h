@@ -26,4 +26,4 @@ private:
     QString m_apiKey;
 };
 
-#endif // WEATHERAPI_H
+#endif
