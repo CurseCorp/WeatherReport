@@ -3,14 +3,16 @@ import QtQuick.Layouts 1.15
 
 Rectangle {
     id: card
-    property string dayName:  "Пн"
-    property string dateStr:  "1 янв"
-    property string iconCode: "01d"
-    property string tempMax:  "--°"
-    property string tempMin:  "--°"
-    property string humidity: "--%"
 
-    width: 80
+    // Свойства с пустыми значениями по умолчанию
+    property string dayName:  ""
+    property string dateStr:  ""
+    property string iconCode: ""
+    property string tempMax:  ""
+    property string tempMin:  ""
+    property string humidity: ""
+
+    width: 208
     height: 180
     radius: 14
     color: hoverArea.containsMouse ? "#3A3A3A" : "#353333"
@@ -20,7 +22,7 @@ Rectangle {
     Behavior on color        { ColorAnimation { duration: 180 } }
     Behavior on border.color { ColorAnimation { duration: 180 } }
 
-    //Тень
+    // Тень
     Rectangle {
         anchors.fill: parent; anchors.margins: -1
         radius: parent.radius + 1
@@ -29,7 +31,6 @@ Rectangle {
         transform: Translate { y: 3 }
     }
 
-    //Анимация поднятия при наведении
     Behavior on y { SmoothedAnimation { velocity: 100 } }
 
     ColumnLayout {
@@ -37,12 +38,14 @@ Rectangle {
         spacing: 2
 
         Text {
+            id: dayNameText
             text: card.dayName
             font.pixelSize: 15; font.weight: Font.DemiBold
             color: "#E8EFF7"
             Layout.alignment: Qt.AlignHCenter
         }
         Text {
+            id: dateText
             text: card.dateStr
             font.pixelSize: 11; color: "#7A8FA8"
             Layout.alignment: Qt.AlignHCenter
@@ -51,26 +54,28 @@ Rectangle {
         Item { height: 2 }
 
         Text {
-            text: getWeatherEmoji(card.iconCode)
-            font.pixelSize: 44
-            Layout.alignment: Qt.AlignHCenter
-        }
+                    text: getWeatherEmoji(card.iconCode)
+                    font.pixelSize: 44
+                    Layout.alignment: Qt.AlignHCenter
+                    color: "#E8EFF7"
+                }
 
         Item { height: 2 }
 
         Text {
-            text: card.tempMax
+            id: tempMaxText
+            text: weatherViewModel.formatTemp(card.tempMax)
             font.pixelSize: 22; font.weight: Font.Medium; color: "#E8EFF7"
             Layout.alignment: Qt.AlignHCenter
         }
         Text {
-            text: card.tempMin
+            id: tempMinText
+            text: weatherViewModel.formatTemp(card.tempMin)
             font.pixelSize: 14; color: "#7A8FA8"
             Layout.alignment: Qt.AlignHCenter
         }
 
         Item { Layout.fillHeight: true }
-
     }
 
     MouseArea {
@@ -84,7 +89,17 @@ Rectangle {
     function getWeatherEmoji(code) {
         if (!code) return "🌡"
         var c = code.substring(0, 2)
-        var map = { "01":"☀️","02":"⛅","03":"☁️","04":"☁️","09":"🌧","10":"🌦","11":"⛈","13":"❄️","50":"🌫" }
+        var map = {
+            "01": "☀️",
+            "02": "⛅",
+            "03": "☁️",
+            "04": "☁️",
+            "09": "🌧",
+            "10": "🌦",
+            "11": "⛈",
+            "13": "❄️",
+            "50": "🌫"
+        }
         return map[c] || "🌡"
     }
 }

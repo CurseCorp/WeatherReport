@@ -44,7 +44,7 @@ Rectangle {
             Text { text: item.country; font.pixelSize: 12; color: "#7A8FA8" }
         }
 
-        Text { text: item.temperature; font.pixelSize: 20; font.weight: Font.Light; color: "#E8EFF7" }
+        Text { text: weatherViewModel.formatTemp(item.temperature); font.pixelSize: 20; font.weight: Font.Light; color: "#E8EFF7" }
 
         // Кнопка удаления
         Rectangle {

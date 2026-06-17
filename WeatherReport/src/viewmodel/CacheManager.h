@@ -2,88 +2,114 @@
 #define CACHEMANAGER_H
 
 #include <QJsonObject>
-#include <QJsonDocument>
 #include <QJsonArray>
-#include <QJsonValue>
+#include <QJsonDocument>
 #include <QFile>
 #include <QDir>
 #include <QStandardPaths>
 #include "../model/services/weatherapi.h"
 
-
 class CacheManager {
 public:
-    static QString getCacheDir() {
-        QString path = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/WeatherReportApp";
-        QDir dir(path);
-        if (!dir.exists()) {
-            dir.mkpath(".");
-        }
-        return path;
-    }
-    static QJsonObject serialize(const WeatherData &data) {
-        QJsonObject obj;
-        obj["cityName"] = data.cityName;
-        obj["temp"] = data.temperatureCurrent;
-        obj["tempMin"] = data.temperatureMin;
-        obj["tempMax"] = data.temperatureMax;
-        obj["humidity"] = data.humidity;
-        obj["description"] = data.description;
-        obj["precipitation"] = data.precipitationMm;
-        obj["pressure"] = data.pressure;
-        obj["windSpeed"] = data.windSpeedMs;
-        QJsonArray hourlyArray;
-        for (const auto &item : data.hourlyForecast) {
-            QJsonObject hourObj;
-            hourObj["time"] = item.time;
-            hourObj["temp"] = item.temp;
-            hourlyArray.append(hourObj);
-        }
-        obj["hourly"] = hourlyArray;
-        return obj;
-    }
-
-    static WeatherData deserialize(const QJsonObject &obj) {
-        WeatherData data;
-        data.cityName = obj["cityName"].toString();
-        data.temperatureCurrent = obj["temp"].toDouble();
-        data.temperatureMin = obj["tempMin"].toDouble();
-        data.temperatureMax = obj["tempMax"].toDouble();
-        data.humidity = obj["humidity"].toInt();
-        data.description = obj["description"].toString();
-        data.precipitationMm = obj["precipitation"].toDouble();
-        data.pressure = obj["pressure"].toDouble();
-        data.windSpeedMs = obj["windSpeed"].toDouble();
-        QJsonArray hourlyArray = obj["hourly"].toArray();
-        for (const QJsonValue &value : hourlyArray) {
-            QJsonObject hourObj = value.toObject();
-
-            WeatherData::HourlyData hourItem;
-            hourItem.time = hourObj["time"].toString();
-            hourItem.temp = hourObj["temp"].toDouble();
-
-            data.hourlyForecast.append(hourItem);
-        }
-
-        return data;
-    }
-
-    static void save(const QString &city, const WeatherData &data) {
-       QString path = getCacheDir() + "/" + city.toLower() + ".json";
+    static void save(const QString &city, const QString &subFolder, const WeatherData &data) {
+        QString path = getFilePath(city, subFolder);
         QFile file(path);
         if (file.open(QIODevice::WriteOnly)) {
             file.write(QJsonDocument(serialize(data)).toJson());
+            file.close();
+            qDebug() << "Кэш сохранен в:" << path;
         }
     }
 
-    static bool load(const QString &city, WeatherData &outData) {
-        QString path = getCacheDir() + "/" + city.toLower() + ".json";
+    static WeatherData load(const QString &city, const QString &subFolder) {
+        QString path = getFilePath(city, subFolder);
         QFile file(path);
-        if (file.exists() && file.open(QIODevice::ReadOnly)) {
-            outData = deserialize(QJsonDocument::fromJson(file.readAll()).object());
-            return true;
+
+        qDebug() << "Проверка кэша по пути:" << path; //
+
+        if (file.open(QIODevice::ReadOnly)) {
+            QByteArray data = file.readAll();
+            file.close();
+            return deserialize(QJsonDocument::fromJson(data).object());
         }
-        return false;
+        return WeatherData();
+    }
+
+private:
+    static QString getFilePath(const QString &city, const QString &subFolder) {
+        QString safeCity = QString(city).trimmed().replace(" ", "_");
+        QString dirPath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) +
+                          "/WeatherReportApp/" + safeCity + "/" + subFolder;
+        QDir().mkpath(dirPath);
+        return dirPath + "/forecast.json";
+    }
+    static QJsonObject serialize(const WeatherData &data) {
+        QJsonObject root;
+        root["cityName"] = data.cityName;
+        root["temp"] = data.temperatureCurrent;
+        root["humidity"] = data.humidity;
+        root["pressure"] = data.pressure;
+        root["windSpeed"] = data.windSpeedMs;
+        root["description"] = data.description;
+
+        QJsonArray daysArray;
+        for (const auto &day : data.dailyForecasts) {
+            QJsonObject dayObj;
+            dayObj["date"] = day.date;
+            dayObj["tempMin"] = day.tempMin;
+            dayObj["tempMax"] = day.tempMax;
+            dayObj["description"] = day.description;
+            dayObj["humidity"] = day.humidity;
+            dayObj["windSpeed"] = day.windSpeedMs;
+            dayObj["pressure"] = day.pressure;
+            dayObj["precipitation"] = day.precipitationMm;
+
+            QJsonArray hArr;
+            for (const auto &h : day.hourly) {
+                QJsonObject hObj;
+                hObj["time"] = h.time;
+                hObj["temp"] = h.temp;
+                hObj["icon"] = h.icon;
+                hArr.append(hObj);
+            }
+            dayObj["hourly"] = hArr;
+            daysArray.append(dayObj);
+        }
+        root["dailyForecasts"] = daysArray;
+        return root;
+    }
+
+    static WeatherData deserialize(const QJsonObject &json) {
+        WeatherData data;
+        data.cityName = json["cityName"].toString();
+        data.temperatureCurrent = json["temp"].toDouble();
+        data.humidity = json["humidity"].toInt();
+        data.pressure = json["pressure"].toInt();
+        data.windSpeedMs = json["windSpeed"].toDouble();
+        data.description = json["description"].toString();
+
+        QJsonArray daysArray = json["dailyForecasts"].toArray();
+        for (const QJsonValue &dayVal : daysArray) {
+            QJsonObject d = dayVal.toObject();
+            DailyForecast day;
+            day.date = d["date"].toString();
+            day.tempMin = d["tempMin"].toDouble();
+            day.tempMax = d["tempMax"].toDouble();
+            day.description = d["description"].toString();
+            day.humidity = d["humidity"].toInt();
+            day.windSpeedMs = d["windSpeed"].toDouble();
+            day.pressure = d["pressure"].toInt();
+            day.precipitationMm = d["precipitation"].toDouble();
+
+            for (const QJsonValue &hVal : d["hourly"].toArray()) {
+                QJsonObject h = hVal.toObject();
+                day.hourly.append({h["time"].toString(), h["temp"].toDouble(), h["icon"].toString()});
+            }
+            data.dailyForecasts.append(day);
+        }
+        data.isValid = true;
+        return data;
     }
 };
-#endif
+
+#endif // CACHEMANAGER_H
