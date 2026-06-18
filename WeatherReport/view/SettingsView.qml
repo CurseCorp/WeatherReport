@@ -2,14 +2,17 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 
-//Настройки
+// Панель настроек (открывается как Drawer справа)
 Item {
     id: settingsView
 
-    // ── Сигналы ───────────────────────────────────────────────────────
+    // Модель, передаётся снаружи при создании SettingsView
+    property var viewModel: null
+
+    // Сигналы
     signal close()
 
-    //Цвета
+    // Цвета (повторяем локально, т.к. это отдельный файл)
     readonly property color bgDeep:      "#373641"
     readonly property color bgCard:      "#353333"
     readonly property color bgCardHover: "#1A2238"
@@ -21,11 +24,12 @@ Item {
     readonly property color danger:      "#EF5350"
     readonly property color success:     "#66BB6A"
 
+    // Layout
     ColumnLayout {
         anchors { fill: parent; margins: 0 }
         spacing: 0
 
-        //Заголовок
+        // Заголовок
         Rectangle {
             Layout.fillWidth: true
             height: 60
@@ -76,7 +80,7 @@ Item {
             }
         }
 
-        //Тело настроек
+        // Тело настроек
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -87,60 +91,134 @@ Item {
                 width: parent.width
                 spacing: 0
 
-                //Единицы измерения: температура и скорость ветра
+                // Секция: Единицы измерения
                 SectionHeader { title: "ЕДИНИЦЫ ИЗМЕРЕНИЯ" }
 
-                //Температура
+                // Температура
                 SettingsRow {
                     label:    "Температура"
                     sublabel: "Отображение в градусах"
-                    rightContent: Row {
-                        spacing: 0
-                        UnitToggleButton {
-                            text: "°C"
-                            isActive: typeof settingsViewModel !== "undefined"
-                                      ? settingsViewModel.isCelsius : true
-                            accentColor: settingsView.accent
-                            onToggled: if (typeof settingsViewModel !== "undefined")
-                                           settingsViewModel.setUnit("celsius")
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 14
+                        width: 80
+                        height: 28
+                        radius: 14
+                        color: root.bgDeep
+                        z: 10
+
+                        Rectangle {
+                            width: 40
+                            height: 28
+                            radius: 14
+                            color: root.accent
+                            x: typeof weatherViewModel !== "undefined"
+                               ? (isCelsius ? 0 : 40) : 0
+                            Behavior on x {
+                                SmoothedAnimation { duration: 200 }
+                            }
                         }
-                        UnitToggleButton {
-                            text: "°F"
-                            isActive: typeof settingsViewModel !== "undefined"
-                                      ? !settingsViewModel.isCelsius : false
-                            accentColor: settingsView.accent
-                            onToggled: if (typeof settingsViewModel !== "undefined")
-                                           settingsViewModel.setUnit("fahrenheit")
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: 0
+                            Text {
+                                Layout.fillWidth: true
+                                text: "°C"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                horizontalAlignment: Text.AlignHCenter
+                                color: typeof weatherViewModel !== "undefined"
+                                       ? (isCelsius ? root.bgDeep : root.textSecond)
+                                       : root.bgDeep
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: "°F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                horizontalAlignment: Text.AlignHCenter
+                                color: typeof weatherViewModel !== "undefined"
+                                       ? (!isCelsius ? root.bgDeep : root.textSecond)
+                                       : root.textSecond
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (typeof weatherViewModel !== "undefined")
+                                    switchUnitsTemp()
+                            }
                         }
                     }
                 }
 
-                //Скорость ветра
+                // Скорость ветра
                 SettingsRow {
                     label:    "Скорость ветра"
                     sublabel: "Единица скорости"
-                    rightContent: Row {
-                        spacing: 0
-                        UnitToggleButton {
-                            text: "м/с"
-                            isActive: typeof settingsViewModel !== "undefined"
-                                      ? settingsViewModel.windUnit === "ms" : true
-                            accentColor: settingsView.accent
-                            onToggled: if (typeof settingsViewModel !== "undefined")
-                                           settingsViewModel.setWindUnit("ms")
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 14
+                        width: 80
+                        height: 28
+                        radius: 14
+                        color: root.bgDeep
+                        z: 10
+
+                        Rectangle {
+                            width: 40
+                            height: 28
+                            radius: 14
+                            color: root.accent
+                            x: typeof weatherViewModel !== "undefined"
+                               ? (isMs ? 0 : 40) : 0
+                            Behavior on x {
+                                SmoothedAnimation { duration: 200 }
+                            }
                         }
-                        UnitToggleButton {
-                            text: "км/ч"
-                            isActive: typeof settingsViewModel !== "undefined"
-                                      ? settingsViewModel.windUnit === "kmh" : false
-                            accentColor: settingsView.accent
-                            onToggled: if (typeof settingsViewModel !== "undefined")
-                                           settingsViewModel.setWindUnit("kmh")
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: 0
+                            Text {
+                                Layout.fillWidth: true
+                                text: "м/с"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                horizontalAlignment: Text.AlignHCenter
+                                color: typeof weatherViewModel !== "undefined"
+                                       ? (isMs ? root.bgDeep : root.textSecond)
+                                       : root.bgDeep
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: "км/ч"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                horizontalAlignment: Text.AlignHCenter
+                                color: typeof weatherViewModel !== "undefined"
+                                       ? (!isMs ? root.bgDeep : root.textSecond)
+                                       : root.textSecond
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (typeof weatherViewModel !== "undefined")
+                                    switchUnitsSpeed()
+                            }
                         }
                     }
                 }
 
-                //Настройка API
+                // Секция: API
                 SectionHeader { title: "API" }
 
                 ColumnLayout {
@@ -181,32 +259,36 @@ Item {
                                 placeholderText: "Введите API ключ..."
                                 font.pixelSize: 13
                                 color: settingsView.textPrimary
-                                background: Item {}
+                                background: basic
                                 leftPadding: 0
                                 placeholderTextColor: settingsView.textSecond
                                 echoMode: showKey.checked
                                           ? TextInput.Normal : TextInput.Password
-                                text: typeof settingsViewModel !== "undefined"
-                                      ? settingsViewModel.apiKey : ""
+                                text: settingsView.viewModel ? settingsView.viewModel.apiKey : ""
                                 onTextChanged: {
-                                    if (typeof settingsViewModel !== "undefined")
-                                        settingsViewModel.apiKey = text
+                                    if (settingsView.viewModel)
+                                        settingsView.viewModel.apiKey = text
                                 }
                             }
-                            CheckBox {
+                            Rectangle {
                                 id: showKey
-                                text: ""
-                                indicator: Rectangle {
-                                    width: 22; height: 22; radius: 6
-                                    color: showKey.checked
-                                           ? Qt.rgba(0.31,0.76,0.97,0.2) : "transparent"
-                                    border.color: showKey.checked
-                                                  ? settingsView.accent : settingsView.border
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "👁"
-                                        font.pixelSize: 11
-                                    }
+                                property bool checked: false
+
+                                width: 22; height: 22; radius: 6
+                                color: checked ? Qt.rgba(0.31,0.76,0.97,0.2) : "transparent"
+                                border.color: checked ? settingsView.accent : settingsView.border
+                                border.width: 1
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "👁"
+                                    font.pixelSize: 11
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: showKey.checked = !showKey.checked
                                 }
                             }
                         }
@@ -214,34 +296,7 @@ Item {
                     Item { height: 4 }
                 }
 
-                //Обновления
-                SectionHeader { title: "АВТООБНОВЛЕНИЕ" }
-
-                SettingsRow {
-                    label:    "Автообновление"
-                    sublabel: "Обновлять данные автоматически"
-                    rightContent: Switch {
-                        checked: typeof settingsViewModel !== "undefined"
-                                 ? settingsViewModel.autoRefresh : true
-                        onToggled: {
-                            if (typeof settingsViewModel !== "undefined")
-                                settingsViewModel.autoRefresh = checked
-                        }
-                        indicator: Rectangle {
-                            implicitWidth: 44; implicitHeight: 24; radius: 12
-                            color: parent.checked ? settingsView.accent : settingsView.border
-                            Behavior on color { ColorAnimation { duration: 200 } }
-                            Rectangle {
-                                x: parent.parent.checked ? parent.width - width - 3 : 3
-                                y: 3; width: 18; height: 18; radius: 9
-                                color: "white"
-                                Behavior on x { SmoothedAnimation { duration: 200 } }
-                            }
-                        }
-                    }
-                }
-
-                //Сохранение
+                // Кнопка сохранить
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.leftMargin: 20
@@ -267,8 +322,8 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (typeof settingsViewModel !== "undefined")
-                                settingsViewModel.saveSettings()
+                            if (settingsView.viewModel)
+                                settingsView.viewModel.saveSettings()
                             savedToast.visible = true
                             savedTimer.restart()
                             settingsView.close()
@@ -279,7 +334,7 @@ Item {
         }
     }
 
-    //Всплывающее окно сохранения
+    // «Сохранено»
     Rectangle {
         id: savedToast
         visible: false
@@ -308,7 +363,7 @@ Item {
         }
     }
 
-    //Вспомогательные компоненты
+    // Вспомогательные inline-компоненты
 
     component SectionHeader: Rectangle {
         property string title: ""
@@ -358,35 +413,13 @@ Item {
             }
         }
         Item {
-            anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+            anchors { right: parent.right; rightMargin: 25; verticalCenter: parent.verticalCenter }
             children: rightContent ? [rightContent] : []
         }
         Rectangle {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right;
                       leftMargin: 20; rightMargin: 20 }
             height: 1; color: settingsView.border; opacity: 0.5
-        }
-    }
-
-    component UnitToggleButton: Rectangle {
-        property string text:        ""
-        property bool   isActive:    false
-        property color  accentColor: "#4FC3F7"
-        signal toggled()
-        width: 46; height: 30
-        color: isActive ? accentColor : Qt.rgba(1,1,1,0.06)
-        radius: 8
-        Behavior on color { ColorAnimation { duration: 160 } }
-        Text {
-            anchors.centerIn: parent
-            text: parent.text
-            font.pixelSize: 12; font.weight: Font.Medium
-            color: isActive ? settingsView.bgDeep : settingsView.textSecond
-            Behavior on color { ColorAnimation { duration: 160 } }
-        }
-        MouseArea {
-            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-            onClicked: parent.toggled()
         }
     }
 }

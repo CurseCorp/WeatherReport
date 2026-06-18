@@ -6,7 +6,7 @@ Rectangle {
     property var appRoot
     property string cityName:    "—"
     property string country:     "—"
-    property string temperature: "--°"
+    property string temperature: "--"
     property int    itemIndex:   0
 
 
@@ -38,13 +38,17 @@ Rectangle {
         anchors { fill: parent; leftMargin: 16; rightMargin: 12 }
         spacing: 12
 
-        ColumnLayout {
-            Layout.fillWidth: true; spacing: 2
-            Text { text: item.cityName; font.pixelSize: 14; font.weight: Font.Medium; color: "#E8EFF7"; elide: Text.ElideRight; Layout.fillWidth: true }
-            Text { text: item.country; font.pixelSize: 12; color: "#7A8FA8" }
-        }
+        Text { text: item.cityName; font.pixelSize: 14; font.weight: Font.Medium; color: "#E8EFF7"; elide: Text.ElideRight; Layout.fillWidth: true }
 
-        Text { text: item.temperature; font.pixelSize: 20; font.weight: Font.Light; color: "#E8EFF7" }
+        Text {
+            text: {
+                var t = parseFloat(item.temperature)
+                return isNaN(t) ? item.temperature : formatTemp(t)
+            }
+            font.pixelSize: 20
+            font.weight: Font.Light
+            color: "#E8EFF7"
+        }
 
         // Кнопка удаления
         Rectangle {

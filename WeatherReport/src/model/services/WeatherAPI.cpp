@@ -21,13 +21,16 @@ WeatherApi::~WeatherApi()
 {
 }
 
-QByteArray WeatherApi::syncGet(const QString &cityName)
+QByteArray WeatherApi::syncGet(const QString &cityName, int days)
 {
+    qDebug() << "!!! ВНИМАНИЕ: Делаю реальный сетевой запрос к WeatherAPI для:" << cityName;
     QUrl url("http://api.weatherapi.com/v1/forecast.json");
     QUrlQuery query;
     query.addQueryItem("key", m_apiKey);
     query.addQueryItem("q", cityName);
-    query.addQueryItem("days", "1");
+    query.addQueryItem("days", QString::number(days));
+    query.addQueryItem("aqi", "no");
+    query.addQueryItem("alerts", "no");
     url.setQuery(query);
 
     qDebug() << "Запрос к WeatherAPI:" << url.toString();
@@ -42,7 +45,7 @@ QByteArray WeatherApi::syncGet(const QString &cityName)
     QByteArray responseData;
     if (reply->error() == QNetworkReply::NoError) {
         responseData = reply->readAll();
-        qDebug() << "Ответ API получен";
+        qDebug() << "Ответ API получен, размер:" << responseData.size();
     } else {
         qDebug() << "Ошибка API:" << reply->errorString();
         emit errorOccurred(reply->errorString());
@@ -52,73 +55,82 @@ QByteArray WeatherApi::syncGet(const QString &cityName)
     return responseData;
 }
 
-WeatherData WeatherApi::parseWeatherJson(const QByteArray &rawData)
+WeatherData WeatherApi::parseCurrentWeatherJson(const QByteArray &rawData)
 {
     WeatherData result;
     result.isValid = false;
 
     QJsonDocument doc = QJsonDocument::fromJson(rawData);
-
-    if (!doc.isObject()) {
-        qDebug() << "Ошибка: ожидался объект JSON";
-        emit errorOccurred("Неверный формат ответа API");
-        return result;
-    }
+    if (!doc.isObject()) return result;
 
     QJsonObject obj = doc.object();
-
-    if (obj.contains("error")) {
-        QString errorMsg = obj["error"].toObject()["message"].toString();
-        qDebug() << "Ошибка API:" << errorMsg;
-        emit errorOccurred(errorMsg);
-        return result;
-    }
+    if (obj.contains("error")) return result;
 
     QJsonObject location = obj["location"].toObject();
-    result.cityId = location["loc_id"].toInt();
     result.cityName = location["name"].toString();
+    result.cityId = location["loc_id"].toInt();
 
     QJsonObject current = obj["current"].toObject();
+    qDebug() << "JSON объекта current:" << current;
     result.temperatureCurrent = current["temp_c"].toDouble();
     result.feelsLike = current["feelslike_c"].toDouble();
     result.humidity = current["humidity"].toInt();
     result.pressure = current["pressure_mb"].toInt();
-
-    double windKph = current["wind_kph"].toDouble();
-    result.windSpeedMs = windKph / 3.6;
-
-    QJsonObject condition = current["condition"].toObject();
-    result.description = condition["text"].toString();
-
-    if (obj.contains("forecast")) {
-        QJsonObject forecast = obj["forecast"].toObject();
-        QJsonArray forecastDay = forecast["forecastday"].toArray();
-
-        if (!forecastDay.isEmpty()) {
-            QJsonObject day = forecastDay[0].toObject();
-            QJsonObject dayData = day["day"].toObject();
-
-            result.temperatureMin = dayData["mintemp_c"].toDouble();
-            result.temperatureMax = dayData["maxtemp_c"].toDouble();
-            result.precipitationMm = dayData["totalprecip_mm"].toDouble();
-        }
-    }
+    result.windSpeedMs = current["wind_kph"].toDouble() / 3.6;
+    result.description = current["condition"].toObject()["text"].toString();
 
     result.isValid = true;
-
-    qDebug() << "Погода для города:" << result.cityName;
-    qDebug() << "  Текущая:" << result.temperatureCurrent << "°C";
-    qDebug() << "  Мин/Макс:" << result.temperatureMin << "/" << result.temperatureMax << "°C";
-    qDebug() << "  Описание:" << result.description;
-    qDebug() << "  Влажность:" << result.humidity << "%";
-    qDebug() << "  Ветер:" << result.windSpeedMs << "м/с";
-    qDebug() << "  Давление:" << result.pressure << "hPa";
-    qDebug() << "  Осадки:" << result.precipitationMm << "мм";
-
+    qDebug() << "Текущая погода для города:" << result.cityName;
+    qDebug() << "  Температура:" << result.temperatureCurrent << "°C";
+    result.pressure = current["pressure_mb"].toInt();
+    qDebug() << "--- Парсинг давления. Значение:" << result.pressure;
     return result;
 }
 
-WeatherData WeatherApi::getWeatherByCityName(const QString &cityName)
+QVector<DailyForecast> WeatherApi::parseForecastJson(const QByteArray &rawData)
+{
+    QVector<DailyForecast> forecasts;
+
+    QJsonDocument doc = QJsonDocument::fromJson(rawData);
+    if (!doc.isObject()) return forecasts;
+
+    QJsonObject obj = doc.object();
+    if (obj.contains("error")) return forecasts;
+
+    if (!obj.contains("forecast")) return forecasts;
+
+    QJsonArray forecastDay = obj["forecast"].toObject()["forecastday"].toArray();
+    for (const auto &dayItem : forecastDay) {
+        QJsonObject dayObj = dayItem.toObject();
+        QJsonObject dayData = dayObj["day"].toObject();
+
+        DailyForecast daily;
+        daily.date = dayObj["date"].toString();
+        daily.tempMin = dayData["mintemp_c"].toDouble();
+        daily.tempMax = dayData["maxtemp_c"].toDouble();
+        daily.precipitationMm = dayData["totalprecip_mm"].toDouble();
+        daily.humidity = dayData["avghumidity"].toInt();
+        daily.pressure = dayData["avgvis_km"].toInt();
+        daily.windSpeedMs = dayData["maxwind_kph"].toDouble() / 3.6;
+        daily.description = dayData["condition"].toObject()["text"].toString();
+
+        for (const auto &hourItem : dayObj["hour"].toArray()) {
+            QJsonObject hObj = hourItem.toObject();
+            HourlyData hourly;
+            hourly.time = hObj["time"].toString().split(" ").last();
+            hourly.temp = hObj["temp_c"].toDouble();
+            hourly.icon = hObj["condition"].toObject()["icon"].toString();
+            daily.hourly.append(hourly);
+        }
+
+        forecasts.append(daily);
+    }
+
+    qDebug() << "Спарсено" << forecasts.size() << "дней прогноза";
+    return forecasts;
+}
+
+WeatherData WeatherApi::getCurrentWeather(const QString &cityName)
 {
     WeatherData result;
     result.isValid = false;
@@ -129,9 +141,9 @@ WeatherData WeatherApi::getWeatherByCityName(const QString &cityName)
         return result;
     }
 
-    qDebug() << "Запрос погоды для города:" << cityName;
+    qDebug() << "Запрос текущей погоды для города:" << cityName;
 
-    QByteArray rawData = syncGet(cityName);
+    QByteArray rawData = syncGet(cityName, 1);
 
     if (rawData.isEmpty()) {
         qDebug() << "Ответ API пустой";
@@ -139,5 +151,28 @@ WeatherData WeatherApi::getWeatherByCityName(const QString &cityName)
         return result;
     }
 
-    return parseWeatherJson(rawData);
+    return parseCurrentWeatherJson(rawData);
+}
+
+QVector<DailyForecast> WeatherApi::getForecast3Days(const QString &cityName)
+{
+    QVector<DailyForecast> result;
+
+    if (cityName.trimmed().isEmpty()) {
+        qDebug() << "Название города пустое";
+        emit errorOccurred("Название города не может быть пустым");
+        return result;
+    }
+
+    qDebug() << "Запрос прогноза на 3 дня для города:" << cityName;
+
+    QByteArray rawData = syncGet(cityName, 3);
+
+    if (rawData.isEmpty()) {
+        qDebug() << "Ответ API пустой";
+        emit errorOccurred("Пустой ответ от API");
+        return result;
+    }
+
+    return parseForecastJson(rawData);
 }
