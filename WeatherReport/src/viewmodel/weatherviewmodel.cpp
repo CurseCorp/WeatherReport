@@ -42,7 +42,7 @@ void WeatherViewModel::updateUIData(const WeatherData &data) {
     const auto &today = data.dailyForecasts[0];
 
     m_cityNameText = data.cityName;
-
+CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
     m_tempText = QString::number(data.temperatureCurrent, 'f', 1);
     m_humidity = QString::number(data.humidity) + " %";
     m_description = data.description;
@@ -125,4 +125,32 @@ void WeatherViewModel::loadFavoriteTemps() {
     }
 
     emit favoriteCityTempsChanged();
+}
+void WeatherViewModel::loadHistory(const QString &city) {
+    m_historyData.clear(); // Очищаем список перед загрузкой новых данных
+    QDate today = QDate::currentDate();
+
+    // Загружаем данные за последние 7 дней
+    for (int i = 1; i <= 7; ++i) {
+        QDate targetDate = today.addDays(-i);
+        WeatherData data = CacheManager::loadHistory(city, targetDate);
+
+        if (data.isValid) {
+            QVariantMap map;
+            map["date"] = targetDate.toString("dd.MM");
+
+            // ВАЖНО: loadHistory возвращает объект, где данные лежат в dailyForecasts[0]
+            if (!data.dailyForecasts.isEmpty()) {
+                const auto &day = data.dailyForecasts[0];
+                map["tempMax"] = day.tempMax; // Или среднее, если нужно
+                map["tempMin"] = day.tempMin;
+                map["description"] = day.description;
+            }
+
+            m_historyData.append(map);
+        }
+    }
+
+    // Обязательно обновляем модель для QML
+    emit historyDataChanged();
 }
