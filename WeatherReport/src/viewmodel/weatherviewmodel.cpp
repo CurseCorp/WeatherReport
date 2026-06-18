@@ -60,6 +60,7 @@ CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
     m_precipitation = QString::number(today.precipitationMm) + " мм";
     m_minTemp = QString::number(today.tempMin, 'f', 1);
     m_maxTemp = QString::number(today.tempMax, 'f', 1);
+    m_iconCode = data.currentIcon;
 
     emit weatherUpdated();
 
@@ -72,6 +73,7 @@ CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
         dayMap["humidity"] = day.humidity;
         dayMap["pressure"] = day.pressure;
         dayMap["description"] = day.description;
+        dayMap["iconcode"] = day.icon;
 
         QVariantList hourlyList;
         for (const auto &hour : day.hourly) {
