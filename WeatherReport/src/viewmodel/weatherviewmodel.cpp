@@ -8,6 +8,8 @@ WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject 
     , m_modelService(service)
 {
     loadFavoritesFromConfig();
+    loadFavoriteTemps();
+    loadWeather("Москва");
 }
 
 void WeatherViewModel::loadWeather(const QString& city) {
@@ -41,14 +43,14 @@ void WeatherViewModel::updateUIData(const WeatherData &data) {
 
     m_cityNameText = data.cityName;
 
-    m_tempText = QString::number(data.temperatureCurrent, 'f', 1) + " °C";
+    m_tempText = QString::number(data.temperatureCurrent, 'f', 1);
     m_humidity = QString::number(data.humidity) + " %";
     m_description = data.description;
-    m_windSpeed = QString::number(data.windSpeedMs) + " м/с";
+    m_windSpeed = QString::number(data.windSpeedMs);
     m_pressure = QString::number(data.pressure) + " мм рт.ст.";
     m_precipitation = QString::number(today.precipitationMm) + " мм";
-    m_minTemp = QString::number(today.tempMin, 'f', 1) + " °C";
-    m_maxTemp = QString::number(today.tempMax, 'f', 1) + " °C";
+    m_minTemp = QString::number(today.tempMin, 'f', 1);
+    m_maxTemp = QString::number(today.tempMax, 'f', 1);
 
     emit weatherUpdated();
 
@@ -88,6 +90,8 @@ void WeatherViewModel::addCityToFavorites(const QString &city) {
     if (trimmedCity.isEmpty() || m_favoriteCities.contains(trimmedCity)) return;
     m_favoriteCities.append(trimmedCity);
     QSettings("CurseCorp", "WeatherReport").setValue("favorites", m_favoriteCities);
+    loadWeather(city);
+    loadFavoriteTemps();
     emit favoriteCitiesChanged();
 }
 
@@ -97,4 +101,28 @@ void WeatherViewModel::removeCityFromFavorites(const QString &city) {
     m_favoriteCities.removeAll(trimmedCity);
     QSettings("CurseCorp", "WeatherReport").setValue("favorites", m_favoriteCities);
     emit favoriteCitiesChanged();
+}
+void WeatherViewModel::loadFavoriteTemps() {
+    QSettings settings("CurseCorp", "WeatherReport");
+    m_favoriteCities = settings.value("favorites").toStringList();
+    m_favoriteCityTemps.clear();
+
+    for (const QString &city : m_favoriteCities) {
+        WeatherData cached = CacheManager::load(city, "forecast");
+
+        if (cached.isValid) {
+            m_favoriteCityTemps[city] = QString::number(cached.temperatureCurrent, 'f', 1);
+        } else {
+
+            m_favoriteCityTemps[city] = "--";
+
+            WeatherData data = m_modelService->getCurrentWeather(city);
+            if (data.isValid) {
+                m_favoriteCityTemps[city] = QString::number(data.temperatureCurrent, 'f', 1);
+                CacheManager::save(city, "forecast", data);
+            }
+        }
+    }
+
+    emit favoriteCityTempsChanged();
 }

@@ -114,7 +114,7 @@ Item {
                             radius: 14
                             color: root.accent
                             x: typeof weatherViewModel !== "undefined"
-                               ? (weatherViewModel.isCelsius ? 0 : 40) : 0
+                               ? (isCelsius ? 0 : 40) : 0
                             Behavior on x {
                                 SmoothedAnimation { duration: 200 }
                             }
@@ -129,7 +129,7 @@ Item {
                                 font.weight: Font.Medium
                                 horizontalAlignment: Text.AlignHCenter
                                 color: typeof weatherViewModel !== "undefined"
-                                       ? (weatherViewModel.isCelsius ? root.bgDeep : root.textSecond)
+                                       ? (isCelsius ? root.bgDeep : root.textSecond)
                                        : root.bgDeep
                                 Behavior on color { ColorAnimation { duration: 200 } }
                             }
@@ -140,7 +140,7 @@ Item {
                                 font.weight: Font.Medium
                                 horizontalAlignment: Text.AlignHCenter
                                 color: typeof weatherViewModel !== "undefined"
-                                       ? (!weatherViewModel.isCelsius ? root.bgDeep : root.textSecond)
+                                       ? (!isCelsius ? root.bgDeep : root.textSecond)
                                        : root.textSecond
                                 Behavior on color { ColorAnimation { duration: 200 } }
                             }
@@ -150,7 +150,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (typeof weatherViewModel !== "undefined")
-                                    weatherViewModel.switchUnitsTemp()
+                                    switchUnitsTemp()
                             }
                         }
                     }
@@ -176,7 +176,7 @@ Item {
                             radius: 14
                             color: root.accent
                             x: typeof weatherViewModel !== "undefined"
-                               ? (weatherViewModel.isMs ? 0 : 40) : 0
+                               ? (isMs ? 0 : 40) : 0
                             Behavior on x {
                                 SmoothedAnimation { duration: 200 }
                             }
@@ -191,7 +191,7 @@ Item {
                                 font.weight: Font.Medium
                                 horizontalAlignment: Text.AlignHCenter
                                 color: typeof weatherViewModel !== "undefined"
-                                       ? (weatherViewModel.isMs ? root.bgDeep : root.textSecond)
+                                       ? (isMs ? root.bgDeep : root.textSecond)
                                        : root.bgDeep
                                 Behavior on color { ColorAnimation { duration: 200 } }
                             }
@@ -202,7 +202,7 @@ Item {
                                 font.weight: Font.Medium
                                 horizontalAlignment: Text.AlignHCenter
                                 color: typeof weatherViewModel !== "undefined"
-                                       ? (!weatherViewModel.isMs ? root.bgDeep : root.textSecond)
+                                       ? (!isMs ? root.bgDeep : root.textSecond)
                                        : root.textSecond
                                 Behavior on color { ColorAnimation { duration: 200 } }
                             }
@@ -212,7 +212,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (typeof weatherViewModel !== "undefined")
-                                    weatherViewModel.switchUnitsSpeed()
+                                    switchUnitsSpeed()
                             }
                         }
                     }
@@ -259,7 +259,7 @@ Item {
                                 placeholderText: "Введите API ключ..."
                                 font.pixelSize: 13
                                 color: settingsView.textPrimary
-                                background: Item {}
+                                background: basic
                                 leftPadding: 0
                                 placeholderTextColor: settingsView.textSecond
                                 echoMode: showKey.checked
@@ -270,20 +270,25 @@ Item {
                                         settingsView.viewModel.apiKey = text
                                 }
                             }
-                            CheckBox {
+                            Rectangle {
                                 id: showKey
-                                text: ""
-                                indicator: Rectangle {
-                                    width: 22; height: 22; radius: 6
-                                    color: showKey.checked
-                                           ? Qt.rgba(0.31,0.76,0.97,0.2) : "transparent"
-                                    border.color: showKey.checked
-                                                  ? settingsView.accent : settingsView.border
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "👁"
-                                        font.pixelSize: 11
-                                    }
+                                property bool checked: false
+
+                                width: 22; height: 22; radius: 6
+                                color: checked ? Qt.rgba(0.31,0.76,0.97,0.2) : "transparent"
+                                border.color: checked ? settingsView.accent : settingsView.border
+                                border.width: 1
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "👁"
+                                    font.pixelSize: 11
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: showKey.checked = !showKey.checked
                                 }
                             }
                         }
@@ -415,28 +420,6 @@ Item {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right;
                       leftMargin: 20; rightMargin: 20 }
             height: 1; color: settingsView.border; opacity: 0.5
-        }
-    }
-
-    component UnitToggleButton: Rectangle {
-        property string text:        ""
-        property bool   isActive:    false
-        property color  accentColor: "#4FC3F7"
-        signal toggled()
-        width: 46; height: 30
-        color: isActive ? accentColor : Qt.rgba(1,1,1,0.06)
-        radius: 8
-        Behavior on color { ColorAnimation { duration: 160 } }
-        Text {
-            anchors.centerIn: parent
-            text: parent.text
-            font.pixelSize: 12; font.weight: Font.Medium
-            color: isActive ? settingsView.bgDeep : settingsView.textSecond
-            Behavior on color { ColorAnimation { duration: 160 } }
-        }
-        MouseArea {
-            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-            onClicked: parent.toggled()
         }
     }
 }
