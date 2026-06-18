@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QDebug>
+#include <QSettings>
 #include "../model/services/weatherapi.h"
 
 class CacheManager {
@@ -62,7 +63,16 @@ public:
             file.close();
         }
     }
-
+    static bool isCacheExpired(const QString &city) {
+        QSettings settings("CurseCorp", "WeatherReport");
+        QDateTime lastUpdate = settings.value(city + "/lastUpdate").toDateTime();
+        if (!lastUpdate.isValid()) return true;
+        return lastUpdate.secsTo(QDateTime::currentDateTime()) > 86400;
+    }
+    static void updateCacheTimestamp(const QString &city) {
+        QSettings settings("CurseCorp", "WeatherReport");
+        settings.setValue(city + "/lastUpdate", QDateTime::currentDateTime());
+    }
     static WeatherData loadHistory(const QString &city, const QDate &date) {
         QString safeCity = city.trimmed().replace(" ", "_");
         QString path = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) +

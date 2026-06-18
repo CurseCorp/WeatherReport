@@ -42,6 +42,7 @@ public:
     Q_INVOKABLE void loadWeather(const QString& city);
     Q_INVOKABLE void loadFavoriteTemps();
     Q_INVOKABLE void loadHistory(const QString &city);
+    Q_INVOKABLE void refreshWeather(const QString &city);
     QVariantMap favoriteCityTemps() const { return m_favoriteCityTemps; }
     QVariantList historyData() const { return m_historyData; }
 signals:
