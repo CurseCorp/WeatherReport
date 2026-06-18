@@ -14,25 +14,30 @@ qt_add_executable(appWeatherReport
     src/main.cpp
     src/viewmodel/WeatherViewModel.h
     src/viewmodel/WeatherViewModel.cpp
+    src/viewmodel/CacheManager.h
     src/model/entities/City.h
-    src/model/services/weatherapi.h
-    src/model/services/cityapi.h
-    src/model/services/weatherdb.h
-    src/model/services/citydb.h
-    src/model/services/WeatherAPI.cpp
-    src/model/services/weatherdb.cpp
-    src/model/services/cityapi.cpp
-    src/model/services/citydb.cpp
-    src/model/entities/ForecastData.h
     src/model/entities/WeatherData.h
     src/model/entities/WeatherService.h
+    src/model/services/WeatherAPI.cippi
+    src/model/services/weatherapi.h
+    src/model/services/geocodingservice.cpp
+    src/model/services/geocodingservice.h
+    src/model/services/IWeatherService.h
+    src/model/services/openweathermapservice.cpp
+    src/model/services/openweathermapservice.h
+    src/model/services/weatherapiservice.cpp
+    src/model/services/weatherapiservice.h
+    src/model/services/weathericonmapper.cpp
+    src/model/services/weathericonmapper.h
+    src/model/services/weatherservicefactory.cpp
+    src/model/services/weatherservicefactory.h
+    src/model/services/weatherservicemanager.cpp
 )
 
 
 qt_add_qml_module(appWeatherReport
     URI WeatherReport
     VERSION 1.0
-    RESOURCE_PREFIX "/"
     QML_FILES
         view/Main.qml
 
@@ -40,15 +45,16 @@ qt_add_qml_module(appWeatherReport
         view/ForecastCard.qml
         view/FavoriteItem.qml
         view/DetailCard.qml
-        view/TabButton.qml
         view/SettingsView.qml
     RESOURCES
-        images/rain.png
-        SOURCES src/model/services/weatherdb.h src/model/services/weatherdb.cpp
-        SOURCES src/model/services/cityapi.h src/model/services/cityapi.cpp
-        SOURCES src/model/services/citydb.h src/model/services/citydb.cpp
-        SOURCES src/model/services/weatherapi.h
+        view/images/rain.png
+        view/images/sun.png
 
+        view/images/humidity.png
+        view/images/precipitation.png
+        view/images/pressure.png
+        view/images/windSpeed.png
+        SOURCES src/viewmodel/CacheManager.h
 
 )
 

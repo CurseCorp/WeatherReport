@@ -1,9 +1,9 @@
-#ifndef CITY_H
-#define CITY_H
+#ifndef CITYDATA_H
+#define CITYDATA_H
 
 #include <QString>
 
-struct City
+struct CityData
 {
     int id = 0;
     QString name;
@@ -14,4 +14,4 @@ struct City
     bool isValid = false;
 };
 
-#endif
+#endif // CITYDATA_H

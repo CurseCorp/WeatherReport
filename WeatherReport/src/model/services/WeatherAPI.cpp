@@ -7,7 +7,9 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDebug>
+#include <cmath>
 #include "src/model/services/weatherapi.h"
+#include "src/model/services/weathericonmapper.h"
 
 WeatherApi::WeatherApi(QObject *parent)
     : QObject(parent)
@@ -19,6 +21,11 @@ WeatherApi::WeatherApi(QObject *parent)
 
 WeatherApi::~WeatherApi()
 {
+}
+
+double roundWindSpeed(double speed)
+{
+    return std::round(speed * 10.0) / 10.0;
 }
 
 QByteArray WeatherApi::syncGet(const QString &cityName, int days)
@@ -74,13 +81,13 @@ WeatherData WeatherApi::parseCurrentWeatherJson(const QByteArray &rawData)
     result.feelsLike = current["feelslike_c"].toDouble();
     result.humidity = current["humidity"].toInt();
     result.pressure = current["pressure_mb"].toInt();
-    result.windSpeedMs = current["wind_kph"].toDouble() / 3.6;
+    result.windSpeedMs = roundWindSpeed(current["wind_kph"].toDouble() / 3.6);
     result.description = current["condition"].toObject()["text"].toString();
 
-    result.isValid = true;
-    qDebug() << "Текущая погода для города:" << result.cityName;
-    qDebug() << "  Температура:" << result.temperatureCurrent << "°C";
+    QString iconCode = current["condition"].toObject()["code"].toString();
+    result.currentIcon = WeatherIconMapper::getIconNameForWeatherAPI(iconCode);
 
+    result.isValid = true;
     return result;
 }
 
@@ -108,22 +115,28 @@ QVector<DailyForecast> WeatherApi::parseForecastJson(const QByteArray &rawData)
         daily.precipitationMm = dayData["totalprecip_mm"].toDouble();
         daily.humidity = dayData["avghumidity"].toInt();
         daily.pressure = dayData["avgvis_km"].toInt();
-        daily.windSpeedMs = dayData["maxwind_kph"].toDouble() / 3.6;
+        daily.windSpeedMs = roundWindSpeed(dayData["maxwind_kph"].toDouble() / 3.6);
         daily.description = dayData["condition"].toObject()["text"].toString();
+        daily.feelsLike = dayData["avgtemp_c"].toDouble();
+
+        QString iconCode = dayData["condition"].toObject()["code"].toString();
+        daily.icon = WeatherIconMapper::getIconNameForWeatherAPI(iconCode);
 
         for (const auto &hourItem : dayObj["hour"].toArray()) {
             QJsonObject hObj = hourItem.toObject();
             HourlyData hourly;
             hourly.time = hObj["time"].toString().split(" ").last();
             hourly.temp = hObj["temp_c"].toDouble();
-            hourly.icon = hObj["condition"].toObject()["icon"].toString();
+
+            QString hourIconCode = hObj["condition"].toObject()["code"].toString();
+            hourly.icon = WeatherIconMapper::getIconNameForWeatherAPI(hourIconCode);
+
             daily.hourly.append(hourly);
         }
 
         forecasts.append(daily);
     }
 
-    qDebug() << "Спарсено" << forecasts.size() << "дней прогноза";
     return forecasts;
 }
 
