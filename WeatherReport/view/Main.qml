@@ -28,7 +28,9 @@ Window {
     property bool   isLoadingLocal: false
     property string lastUpdatedLocal: ""
 
-    property bool showPastForecast: false
+    property bool showHistory: false
+
+    property int currentDayIndex: 0
 
     Component.onCompleted: {
         requestWeather("Москва")
@@ -403,33 +405,86 @@ Window {
             color: root.bgCard
             clip: true
 
-            Text {
-                id: forecastTitle
+            Row {
                 anchors.top: parent.top
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.topMargin: 10
-                text: "Прогноз на 3 дня"
-                font.pixelSize: 16
-                font.weight: Font.Medium
-                color: root.textPrimary
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.margins: 10
+
+                Button {
+                    text: "◀"
+
+                    enabled: currentDayIndex > 0
+
+                    onClicked: currentDayIndex--
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    width: parent.width - 140
+
+                    horizontalAlignment: Text.AlignHCenter
+
+                    text: weatherViewModel.forecastModel.length > 0
+                          ? "Прогноз погоды на 24 часа:  " + weatherViewModel.forecastModel[currentDayIndex].date
+                          : ""
+
+                    font.pixelSize: 16
+                    font.weight: Font.Medium
+                    color: root.textPrimary
+                }
+
+                Button {
+                    text: "▶"
+
+                    enabled: weatherViewModel.forecastModel.length > 0 &&
+                             currentDayIndex < weatherViewModel.forecastModel.length - 1
+
+                    onClicked: currentDayIndex++
+                }
             }
 
-            ListView {
-                id: forecastListView
-                anchors.top: forecastTitle.bottom
+            ScrollView {
+                id: hourlyScroll
+
+                anchors.top: parent.top
+                anchors.topMargin: 40
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                anchors.margins: 8
-                anchors.topMargin: 4
-                clip: true
-                model: typeof weatherViewModel !== "undefined" ? weatherViewModel.forecastModel : null
-                orientation: ListView.Vertical
 
-                delegate: ForecastCard {
-                    width:   forecastListView.width
-                    dateStr: modelData.date
-                    hourly:  modelData.hourly
+                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                WheelHandler {
+                    onWheel: function(event) {
+                        var flick = hourlyScroll.contentItem
+
+                        flick.contentX -= event.angleDelta.y
+
+                        if (flick.contentX < 0)
+                            flick.contentX = 0
+
+                        if (flick.contentX > flick.contentWidth - flick.width)
+                            flick.contentX = flick.contentWidth - flick.width
+
+                        event.accepted = true
+                    }
+                }
+
+                Row {
+                    spacing: 10
+                    padding: 10
+
+                    Repeater {
+                        model: weatherViewModel.forecastModel[currentDayIndex].hourly
+
+                        ForecastCard {
+                            timeStr: modelData.time
+                            tempStr: modelData.temp
+                        }
+                    }
                 }
             }
         }
