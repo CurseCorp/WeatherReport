@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QDebug>
+#include <QSettings>
 #include "../model/services/weatherapi.h"
 
 class CacheManager {
@@ -62,7 +63,16 @@ public:
             file.close();
         }
     }
-
+    static bool isCacheExpired(const QString &city) {
+        QSettings settings("CurseCorp", "WeatherReport");
+        QDateTime lastUpdate = settings.value(city + "/lastUpdate").toDateTime();
+        if (!lastUpdate.isValid()) return true;
+        return lastUpdate.secsTo(QDateTime::currentDateTime()) > 86400;
+    }
+    static void updateCacheTimestamp(const QString &city) {
+        QSettings settings("CurseCorp", "WeatherReport");
+        settings.setValue(city + "/lastUpdate", QDateTime::currentDateTime());
+    }
     static WeatherData loadHistory(const QString &city, const QDate &date) {
         QString safeCity = city.trimmed().replace(" ", "_");
         QString path = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) +
@@ -83,6 +93,7 @@ public:
             day.windSpeedMs = json["windSpeed"].toDouble();
             day.pressure = json["pressure"].toInt();
             day.precipitationMm = json["precipitation"].toDouble();
+            day.icon = json["iconcode"].toString();
 
             for (const QJsonValue &hVal : json["hourly"].toArray()) {
                 QJsonObject h = hVal.toObject();
@@ -107,6 +118,7 @@ private:
         obj["windSpeed"] = day.windSpeedMs;
         obj["pressure"] = day.pressure;
         obj["precipitation"] = day.precipitationMm;
+        obj["iconcode"] = day.icon;
 
         QJsonArray hArr;
         for (const auto &h : day.hourly) {
@@ -136,6 +148,7 @@ private:
         root["pressure"] = data.pressure;
         root["windSpeed"] = data.windSpeedMs;
         root["description"] = data.description;
+        root["iconcode"] = data.currentIcon;
         QJsonArray daysArray;
         for (const auto &day : data.dailyForecasts) {
             daysArray.append(serializeSingleDay(day));
@@ -152,6 +165,7 @@ private:
         data.pressure = json["pressure"].toInt();
         data.windSpeedMs = json["windSpeed"].toDouble();
         data.description = json["description"].toString();
+        data.currentIcon = json["iconcode"].toString();
         for (const QJsonValue &dayVal : json["dailyForecasts"].toArray()) {
             QJsonObject d = dayVal.toObject();
             DailyForecast day;
@@ -162,6 +176,7 @@ private:
             day.humidity = d["humidity"].toInt();
             day.windSpeedMs = d["windSpeed"].toDouble();
             day.pressure = d["pressure"].toInt();
+            day.icon =d["iconcode"].toString();
             day.precipitationMm = d["precipitation"].toDouble();
             for (const QJsonValue &hVal : d["hourly"].toArray()) {
                 QJsonObject h = hVal.toObject();

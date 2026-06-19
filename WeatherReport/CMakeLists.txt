@@ -16,15 +16,24 @@ qt_add_executable(appWeatherReport
     src/viewmodel/WeatherViewModel.cpp
     src/viewmodel/CacheManager.h
     src/model/entities/City.h
-    src/model/services/CityAPI.cpp
+
     src/model/entities/ForecastData.h
     src/model/entities/WeatherData.h
     src/model/entities/WeatherService.h
-    src/model/services/cityapi.cpp
-    src/model/services/cityapi.h
+
+
     src/model/services/WeatherAPI.cpp
     src/model/services/weatherapi.h
-
+    src/model/services/IWeatherService.h
+    src/model/services/openweathermapservice.cpp
+    src/model/services/openweathermapservice.h
+    src/model/services/weatherapiservice.cpp
+    src/model/services/weatherapiservice.h
+    src/model/services/weathericonmapper.cpp
+    src/model/services/weathericonmapper.h
+    src/model/services/weatherservicefactory.cpp
+    src/model/services/weatherservicefactory.h
+    src/model/services/weatherservicemanager.cpp
 )
 
 
@@ -42,7 +51,12 @@ qt_add_qml_module(appWeatherReport
     RESOURCES
         view/images/rain.png
         view/images/sun.png
-
+        view/images/fog.png
+        view/images/snow.png
+        view/images/partlycloudy.png
+        view/images/thunderstorm.png
+        view/images/drizzle.png
+        view/images/overcast.png
         view/images/humidity.png
         view/images/precipitation.png
         view/images/pressure.png

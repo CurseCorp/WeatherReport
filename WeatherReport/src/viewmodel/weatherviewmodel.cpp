@@ -14,24 +14,33 @@ WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject 
 
 void WeatherViewModel::loadWeather(const QString& city) {
     if (city.isEmpty()) return;
+    bool isExpired = CacheManager::isCacheExpired(city);
     WeatherData cachedData = CacheManager::load(city, "forecast");
 
-    if (cachedData.isValid) {
-        qDebug() << "--- УСПЕШНО: Данные взяты из кэша для:" << city;
+    if (cachedData.isValid && !isExpired) {
+        qDebug() << "--- УСПЕШНО: Данные взяты из свежего кэша для:" << city;
         updateUIData(cachedData);
+        return;
+    }
+    qDebug() << (isExpired ? "--- Кэш устарел, обновляем из сети..."
+                           : "--- Кэш не найден, делаем сетевые запросы...");
+
+    WeatherData current = m_modelService->getCurrentWeather(city);
+    QVector<DailyForecast> forecast = m_modelService->getForecast3Days(city);
+
+    if (current.isValid && !forecast.isEmpty()) {
+        current.dailyForecasts = forecast;
+
+        CacheManager::save(city, "forecast", current);
+        CacheManager::updateCacheTimestamp(city);
+
+        updateUIData(current);
     } else {
-        qDebug() << "--- Кэш не найден или поврежден, делаем сетевые запросы...";
-
-        WeatherData current = m_modelService->getCurrentWeather(city);
-        QVector<DailyForecast> forecast = m_modelService->getForecast3Days(city);
-
-        if (current.isValid && !forecast.isEmpty()) {
-            current.dailyForecasts = forecast;
-            CacheManager::save(city, "forecast", current);
-
-            updateUIData(current);
+        if (cachedData.isValid) {
+            qDebug() << "--- ОШИБКА СЕТИ: Используем старый кэш в качестве резерва.";
+            updateUIData(cachedData);
         } else {
-            qDebug() << "--- ОШИБКА: Не удалось получить данные из сети!";
+            qDebug() << "--- ОШИБКА: Не удалось получить данные ни из сети, ни из кэша!";
         }
     }
 }
@@ -51,6 +60,7 @@ CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
     m_precipitation = QString::number(today.precipitationMm) + " мм";
     m_minTemp = QString::number(today.tempMin, 'f', 1);
     m_maxTemp = QString::number(today.tempMax, 'f', 1);
+    m_iconCode = data.currentIcon;
 
     emit weatherUpdated();
 
@@ -63,6 +73,7 @@ CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
         dayMap["humidity"] = day.humidity;
         dayMap["pressure"] = day.pressure;
         dayMap["description"] = day.description;
+        dayMap["iconcode"] = day.icon;
 
         QVariantList hourlyList;
         for (const auto &hour : day.hourly) {
@@ -127,10 +138,9 @@ void WeatherViewModel::loadFavoriteTemps() {
     emit favoriteCityTempsChanged();
 }
 void WeatherViewModel::loadHistory(const QString &city) {
-    m_historyData.clear(); // Очищаем список перед загрузкой новых данных
+    m_historyData.clear();
     QDate today = QDate::currentDate();
 
-    // Загружаем данные за последние 7 дней
     for (int i = 1; i <= 7; ++i) {
         QDate targetDate = today.addDays(-i);
         WeatherData data = CacheManager::loadHistory(city, targetDate);
@@ -138,11 +148,9 @@ void WeatherViewModel::loadHistory(const QString &city) {
         if (data.isValid) {
             QVariantMap map;
             map["date"] = targetDate.toString("dd.MM");
-
-            // ВАЖНО: loadHistory возвращает объект, где данные лежат в dailyForecasts[0]
             if (!data.dailyForecasts.isEmpty()) {
                 const auto &day = data.dailyForecasts[0];
-                map["tempMax"] = day.tempMax; // Или среднее, если нужно
+                map["tempMax"] = day.tempMax;
                 map["tempMin"] = day.tempMin;
                 map["description"] = day.description;
             }
@@ -150,7 +158,20 @@ void WeatherViewModel::loadHistory(const QString &city) {
             m_historyData.append(map);
         }
     }
-
-    // Обязательно обновляем модель для QML
     emit historyDataChanged();
+}
+void WeatherViewModel::refreshWeather(const QString &city) {
+    qDebug() << "--- Принудительное обновление для:" << city;
+    WeatherData current = m_modelService->getCurrentWeather(city);
+    QVector<DailyForecast> forecast = m_modelService->getForecast3Days(city);
+
+    if (current.isValid && !forecast.isEmpty()) {
+        current.dailyForecasts = forecast;
+        CacheManager::save(city, "forecast", current);
+        updateUIData(current);
+        qDebug() << "--- УСПЕШНО: Данные обновлены из сети.";
+    } else {
+        qDebug() << "--- ОШИБКА: Сеть недоступна, берем данные из кэша...";
+        loadWeather(city);
+    }
 }

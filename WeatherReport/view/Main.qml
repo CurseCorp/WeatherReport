@@ -29,8 +29,8 @@ Window {
     property string lastUpdatedLocal: ""
 
     property bool showHistory: false
-
     property int currentDayIndex: 0
+    property bool findpressed: false
 
     Component.onCompleted: {
         requestWeather("Москва")
@@ -41,7 +41,12 @@ Window {
         isLoadingLocal = true
         if (typeof weatherViewModel !== "undefined")
             weatherViewModel.loadWeather(city)
+            weatherViewModel.loadHistory(city)
     }
+    function refWeather(city) {
+            if (typeof weatherViewModel !== "undefined")
+                weatherViewModel.refreshWeather(city)
+        }
 
     // Реагируем на сигналы реального ViewModel
     Connections {
@@ -64,7 +69,7 @@ Window {
 
     function formatTemp(celsiusValue) {
         var value = isCelsius ? Math.round(celsiusValue) : celsiusToFahrenheit(celsiusValue)
-        var sign = value >= 0 ? "+" : ""
+        var sign = value >= 0 ? "+" : "-"
         return sign + value + "°" + (isCelsius ? "C" : "F")
     }
     // Конвертация скорости ветра м/с -> км/ч (чисто визуальная, без участия C++)
@@ -79,15 +84,24 @@ Window {
     }
 
     // Подбор иконки по текстовому описанию погоды (iconCode в ViewModel пока нет)
-    function getWeatherEmoji(description) {
-        var d = (description || "").toLowerCase()
-        if (d.indexOf("гроза") !== -1)                          return "images/storm.png"
-        if (d.indexOf("снег") !== -1)                            return "images/snow.png"
-        if (d.indexOf("дожд") !== -1 || d.indexOf("ливен") !== -1) return "images/rain.png"
-        if (d.indexOf("облач") !== -1 || d.indexOf("пасмурно") !== -1) return "images/cloud.png"
-        if (d.indexOf("туман") !== -1)                           return "images/fog.png"
-        if (d.indexOf("ясно") !== -1 || d.indexOf("солнечно") !== -1) return "images/sun.png"
-        return "images/sun.png"
+    function getWeatherImage(code) {
+        if (!code) return "🌡"
+        var map = {
+            "sunny": "images/sun.png",
+            "partly_cloudy": "images/partlycloudy.png",
+            "cloudy": "images/overcast.png",
+            "overcast": "images/overcast.png",
+            "fog": "images/fog.png",
+            "drizzle": "images/drizzle.png",
+            "thunderstorm": "images/thunderstorm.png",
+            "snow": "images/snow.png",
+            "light_snow": "images/snow.png",
+            "heavy_snow": "images/snow.png",
+            "light_rain": "images/rain.png",
+            "heavy_rain": "images/rain.png",
+            "rain": "images/rain.png"
+        }
+        return map[code] || "images/pressure"
     }
 
     // Текущая дата на русском (в ViewModel нет полей weekday/day/month)
@@ -120,7 +134,6 @@ Window {
     readonly property color border:      "#353333"
     readonly property color danger:      "#EF5350"
     readonly property color success:     "#66BB6A"
-
     MouseArea {
         id: dragArea
         anchors.top: parent.top
@@ -185,7 +198,7 @@ Window {
                     onClicked: {
                         rotateAnim.restart()
                         if (typeof weatherViewModel !== "undefined")
-                            requestWeather(weatherViewModel.cityNameText)
+                            refWeather(weatherViewModel.cityNameText)
                     }
                     RotationAnimator on rotation {
                         id: rotateAnim
@@ -253,20 +266,69 @@ Window {
             radius: 14
             color: "transparent"
             clip: true
-
-            Text {
+            Row {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: 20
                 anchors.leftMargin: 30
-                text: typeof weatherViewModel !== "undefined" ? weatherViewModel.cityNameText : "—"
-                font.pixelSize: 30
-                font.weight: Font.Medium
-                color: root.textPrimary
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
 
+                spacing: 10
+
+                Text {
+                    text: typeof weatherViewModel !== "undefined"
+                          ? weatherViewModel.cityNameText
+                          : "—"
+
+                    font.pixelSize: 30
+                    font.weight: Font.Medium
+                    color: root.textPrimary
+
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                TitleButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: root.findpressed ? "◀" : "▶"
+                    tooltip: root.findpressed ? "Отмена" : "Поиск города"
+                    accentColor: root.findpressed ? root.danger : root.accent
+
+                    onClicked: {
+                        root.findpressed = !root.findpressed
+
+                        if (!root.findpressed) {
+                            searchforonecountry.text = ""
+                        } else {
+                            searchforonecountry.forceActiveFocus()
+                        }
+                    }
+                }
+                TextField {
+                    id: searchforonecountry
+
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    visible: root.findpressed
+                    width: 180
+                    color: root.textPrimary
+                    placeholderText: "Введите город"
+                    enabled: root.findpressed
+                    readOnly: !root.findpressed
+                    Keys.onReturnPressed: {
+                        var cityText = text.trim()
+                        if (cityText.length === 0) return
+
+                        requestWeather(cityText)
+
+                        text = ""
+                        root.findpressed = false
+                    }
+
+                    Keys.onEscapePressed: {
+                        text = ""
+                        root.findpressed = false
+                    }
+                }
+            }
             Text {
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -334,7 +396,7 @@ Window {
 
                 Image {
                     source: typeof weatherViewModel !== "undefined"
-                            ? getWeatherEmoji(weatherViewModel.description) : "images/sun.png"
+                            ? getWeatherImage(weatherViewModel.iconCode) : "images/sun.png"
                     width: 280
                     height: 280
                     fillMode: Image.PreserveAspectFit
@@ -394,11 +456,11 @@ Window {
 
         // Дни погоды
         Rectangle {
+            id: forecastWindow
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.leftMargin: 70
             anchors.bottomMargin: 30
-
             width: 660
             height: 230
             radius: 14
@@ -411,42 +473,97 @@ Window {
                 anchors.right: parent.right
                 anchors.margins: 10
 
-                Button {
-                    text: "◀"
-
-                    enabled: currentDayIndex > 0
-
+                TitleButton {
+                    icon: "◀"
+                    enabled: !showHistory && currentDayIndex > 0
                     onClicked: currentDayIndex--
                 }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-
-                    width: parent.width - 140
-
+                    width: parent.width - 210
                     horizontalAlignment: Text.AlignHCenter
 
-                    text: weatherViewModel.forecastModel.length > 0
-                          ? "Прогноз погоды на 24 часа:  " + weatherViewModel.forecastModel[currentDayIndex].date
-                          : ""
+                    text: showHistory
+                          ? "История прогнозов"
+                          : (weatherViewModel.forecastModel.length > 0
+                             ? "Прогноз погоды на 24 часа: " +
+                               weatherViewModel.forecastModel[currentDayIndex].date
+                             : "")
 
                     font.pixelSize: 16
                     font.weight: Font.Medium
                     color: root.textPrimary
                 }
 
-                Button {
-                    text: "▶"
-
-                    enabled: weatherViewModel.forecastModel.length > 0 &&
+                TitleButton {
+                    icon: "▶"
+                    enabled: !showHistory &&
+                             weatherViewModel.forecastModel.length > 0 &&
                              currentDayIndex < weatherViewModel.forecastModel.length - 1
-
                     onClicked: currentDayIndex++
                 }
-            }
 
+                // Кнопка переключения режима
+                TitleButton {
+                    icon: showHistory ? "☀" : "🕘"
+
+                    onClicked: {
+                        showHistory = !showHistory
+                    }
+                }
+            }
             ScrollView {
-                id: hourlyScroll
+                    id: hourlyScroll
+
+                    visible: !showHistory
+
+                    anchors.top: parent.top
+                    anchors.topMargin: 40
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+
+                    ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                    WheelHandler {
+                        onWheel: function(event) {
+                            var flick = hourlyScroll.contentItem
+
+                            flick.contentX -= event.angleDelta.y
+
+                            if (flick.contentX < 0)
+                                flick.contentX = 0
+
+                            if (flick.contentX > flick.contentWidth - flick.width)
+                                flick.contentX = flick.contentWidth - flick.width
+
+                            event.accepted = true
+                        }
+                    }
+
+                    Row {
+                        spacing: 10
+                        padding: 10
+
+                        Repeater {
+                            model: weatherViewModel.forecastModel[currentDayIndex].hourly
+
+                            ForecastCard {
+                                timeStr: modelData.time
+                                iconImage: modelData.icon
+                                tempStr: modelData.temp
+                            }
+                        }
+                    }
+                }
+
+                // ==========================
+                // ИСТОРИЯ ПРОГНОЗОВ
+                // ==========================
+            ListView {
+                visible: showHistory
 
                 anchors.top: parent.top
                 anchors.topMargin: 40
@@ -454,35 +571,39 @@ Window {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
 
-                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                clip: true
+                spacing: 8
 
-                WheelHandler {
-                    onWheel: function(event) {
-                        var flick = hourlyScroll.contentItem
+                model: weatherViewModel.historyData
 
-                        flick.contentX -= event.angleDelta.y
+                delegate: Rectangle {
+                    width: ListView.view.width - 20
+                    height: 60
+                    radius: 8
+                    color: Qt.rgba(1, 1, 1, 0.05)
 
-                        if (flick.contentX < 0)
-                            flick.contentX = 0
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 25
 
-                        if (flick.contentX > flick.contentWidth - flick.width)
-                            flick.contentX = flick.contentWidth - flick.width
+                        Text {
+                            width: 70
+                            text: modelData.date
+                            color: root.textPrimary
+                            font.bold: true
+                        }
 
-                        event.accepted = true
-                    }
-                }
+                        Text {
+                            width: 90
+                            text: formatTemp(modelData.tempMin) + " / " + formatTemp(modelData.tempMax)
+                            color: root.textPrimary
+                        }
 
-                Row {
-                    spacing: 10
-                    padding: 10
-
-                    Repeater {
-                        model: weatherViewModel.forecastModel[currentDayIndex].hourly
-
-                        ForecastCard {
-                            timeStr: modelData.time
-                            tempStr: modelData.temp
+                        Text {
+                            text: modelData.description
+                            color: root.textPrimary
+                            elide: Text.ElideRight
                         }
                     }
                 }
