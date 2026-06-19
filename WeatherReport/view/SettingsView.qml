@@ -322,13 +322,47 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (typeof weatherViewModel !== "undefined") {
-                                    weatherViewModel.saveApiKey("aa941f1cb98b37488fd1865516e229bc")
-                                }
-                            savedToast.visible = true
-                            savedTimer.restart()
-                            settingsView.close()
+                            // Берем ключ из поля ввода
+                            if (typeof weatherViewModel !== "undefined" && apiInput.text.trim() !== "") {
+                                weatherViewModel.saveApiKey(apiInput.text.trim())
+                                savedToast.visible = true
+                                savedTimer.restart()
+                                settingsView.close()
+                            } else {
+                                // Показываем ошибку если ключ пустой
+                                errorToast.visible = true
+                                errorTimer.restart()
+                            }
                         }
+                    }
+                }
+
+                // Добавляем Toast для ошибки
+                Rectangle {
+                    id: errorToast
+                    visible: false
+                    anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter;
+                              bottomMargin: 20 }
+                    width: errorTxt.width + 32; height: 36; radius: 18
+                    color: settingsView.danger
+
+                    Text {
+                        id: errorTxt
+                        anchors.centerIn: parent
+                        text: "✕  Введите API ключ"
+                        font.pixelSize: 13
+                        color: "#0B0F1A"
+                        font.weight: Font.Medium
+                    }
+                    Timer {
+                        id: errorTimer
+                        interval: 2000
+                        onTriggered: errorToast.visible = false
+                    }
+                    NumberAnimation on opacity {
+                        running: errorToast.visible
+                        from: 0; to: 1; duration: 220
+                        easing.type: Easing.OutCubic
                     }
                 }
             }

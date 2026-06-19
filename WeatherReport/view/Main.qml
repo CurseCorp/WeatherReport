@@ -114,6 +114,11 @@ Window {
         var now = new Date()
         return days[now.getDay()] + ", " + now.getDate() + " " + months[now.getMonth()]
     }
+    function saveApiKey(key) {
+        settings.setValue("apiKey", key);
+        apiKey = key;
+        updateWeather();
+    }
 
     // Цветовая палитра
     readonly property color bgDeep:      "#373641"
