@@ -44,6 +44,7 @@ Window {
         if (typeof weatherViewModel !== "undefined")
             weatherViewModel.refreshWeather(city)
     }
+
     // Реагируем на сигналы реального ViewModel
     Connections {
         target: typeof weatherViewModel !== "undefined" ? weatherViewModel : null
@@ -187,6 +188,7 @@ Window {
                         rotateAnim.restart()
                         if (typeof weatherViewModel !== "undefined")
                             refWeather(weatherViewModel.cityNameText)
+
                     }
                     RotationAnimator on rotation {
                         id: rotateAnim
