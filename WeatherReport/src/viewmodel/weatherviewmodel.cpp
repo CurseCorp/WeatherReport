@@ -1,5 +1,6 @@
 #include "WeatherViewModel.h"
 #include "CacheManager.h"
+#include "../model/services/weatherservicemanager.h"
 #include <QSettings>
 #include <QDebug>
 
@@ -61,6 +62,7 @@ CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
     m_minTemp = QString::number(today.tempMin, 'f', 1);
     m_maxTemp = QString::number(today.tempMax, 'f', 1);
     m_iconCode = data.currentIcon;
+
 
     emit weatherUpdated();
 
@@ -174,4 +176,10 @@ void WeatherViewModel::refreshWeather(const QString &city) {
         qDebug() << "--- ОШИБКА: Сеть недоступна, берем данные из кэша...";
         loadWeather(city);
     }
+}
+void WeatherViewModel::saveApiKey(const QString &apikey) {
+    WeatherServiceManager mng;
+    mng.setApiKey(apikey);
+    qDebug() << "Api ключ" << apikey << " передан";
+    emit apiChanged();
 }

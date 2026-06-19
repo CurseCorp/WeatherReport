@@ -23,6 +23,7 @@ class WeatherViewModel : public QObject
     Q_PROPERTY(QVariantList forecastModel READ forecastModel NOTIFY forecastModelChanged)
     Q_PROPERTY(QVariantMap favoriteCityTemps READ favoriteCityTemps NOTIFY favoriteCityTempsChanged)
     Q_PROPERTY(QVariantList historyData READ historyData NOTIFY historyDataChanged)
+     Q_PROPERTY(QString apiKey READ apiKey NOTIFY apiChanged)
 
 public:
    explicit WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject *parent = nullptr);
@@ -36,6 +37,7 @@ public:
     QString minTemp() const {return m_minTemp;   }
     QString maxTemp() const {return m_maxTemp;   }
     QString iconCode() const {return m_iconCode;   }
+    QString apiKey() const {return api_key ; }
     QStringList favoriteCities() const { return m_favoriteCities; }
 
     QVariantList forecastModel() const { return m_forecastModel; }
@@ -46,6 +48,7 @@ public:
     Q_INVOKABLE void loadFavoriteTemps();
     Q_INVOKABLE void loadHistory(const QString &city);
     Q_INVOKABLE void refreshWeather(const QString &city);
+    Q_INVOKABLE void saveApiKey(const QString &apikey);
     QVariantMap favoriteCityTemps() const { return m_favoriteCityTemps; }
     QVariantList historyData() const { return m_historyData; }
 signals:
@@ -55,6 +58,7 @@ signals:
     void forecastModelChanged();
     void favoriteCityTempsChanged();
     void historyDataChanged();
+    void apiChanged();
 private:
     std::shared_ptr<WeatherApi> m_modelService;
     QString m_cityNameText = "—";
@@ -67,6 +71,7 @@ private:
     QString m_minTemp = "0";
     QString m_maxTemp = "0";
     QString m_iconCode = "0";
+    QString api_key="123456";
     QStringList m_favoriteCities;
     QVariantMap m_favoriteCityTemps;
     void loadFavoritesFromConfig();

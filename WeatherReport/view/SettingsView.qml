@@ -322,8 +322,9 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (settingsView.viewModel)
-                                settingsView.viewModel.saveSettings()
+                            if (typeof weatherViewModel !== "undefined") {
+                                    weatherViewModel.saveApiKey("aa941f1cb98b37488fd1865516e229bc")
+                                }
                             savedToast.visible = true
                             savedTimer.restart()
                             settingsView.close()

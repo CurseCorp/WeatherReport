@@ -13,9 +13,11 @@ void WeatherServiceManager::setApiKey(const QString &apiKey)
     if (m_currentApiKey == apiKey) {
         return;
     }
-
+    qDebug() << "Текущий API ключ: " << m_currentApiKey;
     m_currentApiKey = apiKey;
     updateService();
+    qDebug() << "Текущий API ключ: " << m_currentApiKey;
+
 }
 
 void WeatherServiceManager::updateService()
