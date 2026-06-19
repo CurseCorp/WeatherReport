@@ -26,37 +26,46 @@ Rectangle {
             text: timeStr
             font.pixelSize: 14
             color: "#E8EFF7"
-            Layout.alignment: Qt.AlignHCenter
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            horizontalAlignment: Text.AlignHCenter
+            Layout.fillWidth: true
             z: 1
         }
-        Image{
-            source:getWeatherImage(iconImage)
-            anchors.centerIn: parent
-            height: 30
-            width: 30
-            anchors.fill: parent
-            fillMode: Image.PreserveAspectFit
-            anchors.verticalCenter: parent.verticalCenter
+
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignHCenter
+
+            Image {
+                id: weatherIcon
+                source: getWeatherImage(iconImage)
+                anchors.centerIn: parent
+                height: 40
+                width: 40
+                fillMode: Image.PreserveAspectFit
+            }
         }
+
         Text {
             text: formatTemp(tempStr)
             font.pixelSize: 16
             font.bold: true
             color: root.textPrimary
-            Layout.alignment: Qt.AlignHCenter
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
+            horizontalAlignment: Text.AlignHCenter
+            Layout.fillWidth: true
             z: 1
         }
     }
+
     function getWeatherImage(code) {
         if (!code) return "🌡";
 
-        // 1. Извлекаем часы из строки (предполагаем формат "HH:mm" или "H:mm")
         var hour = parseInt(timeStr.split(":")[0]);
         var isNight = (hour >= 23 || hour <= 4);
 
-        // 2. Создаем карту
         var map = {
-            // Используем тернарный оператор для выбора иконки для sunny
             "sunny": (isNight ? "images/night.png" : "images/sun.png"),
             "partly_cloudy": "images/partlycloudy.png",
             "cloudy": "images/overcast.png",
