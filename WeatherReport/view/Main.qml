@@ -622,171 +622,122 @@ Window {
         }
 
         // Поисковая строка / добавление в избранное
-        // Поиска с подсказками в ViewModel нет (searchCity не реализован) — просто вводим
-        // название города и сразу добавляем его в избранное через addCityToFavorites().
+
         Rectangle {
             id: searchAreaWrapper
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.leftMargin: 755
-            anchors.topMargin: 115
-
-            Layout.preferredWidth: root.addMode ? 520 : 400
+            anchors { top: parent.top; left: parent.left; leftMargin: 755; topMargin: 115 }
             width: root.addMode ? 520 : 400
             height: 40
-            radius: 14
             color: "transparent"
 
-            Behavior on width {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-            }
+            Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
             Rectangle {
                 id: searchBoxOuter
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: root.addMode ? addFavBtn.left : parent.right
-                anchors.rightMargin: root.addMode ? 8 : 0
+                anchors { top: parent.top; left: parent.left; right: root.addMode ? addFavBtn.left : parent.right; rightMargin: root.addMode ? 8 : 0 }
                 height: 40
                 radius: 14
                 color: root.addMode ? "#EDEAEA" : root.bgCard
-                border.color: root.addMode
-                              ? (searchInput.activeFocus ? root.accent : root.border)
-                              : root.bgCard
-                border.width: root.addMode ? (searchInput.activeFocus ? 2 : 1) : 1
+                border {
+                    color: root.addMode ? (searchInput.activeFocus ? root.accent : root.border) : root.bgCard
+                    width: root.addMode ? (searchInput.activeFocus ? 2 : 1) : 1
+                }
                 clip: true
 
-                Behavior on color { ColorAnimation { duration: 200 } }
-                Behavior on border.color { ColorAnimation { duration: 200 } }
+                RowLayout {
+                    anchors { fill: parent; leftMargin: 14; rightMargin: 8 }
+                    spacing: 8
 
-                Rectangle {
-                    id: searchBox
-                    anchors.fill: parent
-                    radius: 14
-                    color: "transparent"
+                    Text { text: "🔍"; font.pixelSize: 14; color: root.addMode ? root.textSecond : "#788EA8" }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 8
-                        spacing: 8
-
-                        Text {
-                            text: "🔍"
-                            font.pixelSize: 14
-                            color: root.addMode ? root.textSecond : Qt.rgba(0.47, 0.56, 0.66, 0.5)
-                            Behavior on color { ColorAnimation { duration: 200 } }
-                        }
-
-                        TextField {
-                            id: searchInput
-                            Layout.fillWidth: true
-                            placeholderText: root.addMode ? "Введите город для добавления..." : "Нажмите +"
-                            font.pixelSize: 14
-                            color: root.addMode ? "#1A1A2E" : root.textSecond
-                            background: basic
-                            leftPadding: 0
-                            placeholderTextColor: root.addMode ? root.textSecond : Qt.rgba(0.47, 0.56, 0.66, 0.45)
-                            enabled: root.addMode
-                            readOnly: !root.addMode
-
-                            Behavior on color { ColorAnimation { duration: 200 } }
-
-                            Keys.onReturnPressed: {
-                                if (!root.addMode) return
-                                var cityText = text.trim()
-                                if (cityText.length === 0) return
-                                if (typeof weatherViewModel !== "undefined")
-                                    weatherViewModel.addCityToFavorites(cityText)
-                                text = ""
-                                root.addMode = false
-                            }
-                            Keys.onEscapePressed: {
-                                focus = false
-                                root.addMode = false
-                                text = ""
-                            }
-                        }
-
-                        Rectangle {
-                            width: 22
-                            height: 22
-                            radius: 11
-                            color: clearHover.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                            visible: searchInput.text.length > 0 && root.addMode
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 11
-                                color: root.textSecond
-                            }
-                            MouseArea {
-                                id: clearHover
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: searchInput.text = ""
+                    TextField {
+                        id: searchInput
+                        Layout.fillWidth: true
+                        placeholderText: root.addMode ? "Введите город для добавления..." : "Нажмите +"
+                        font.pixelSize: 14
+                        color: root.addMode ? "#1A1A2E" : root.textSecond
+                        background: null
+                        enabled: root.addMode
+                        readOnly: !root.addMode
+                        onTextChanged: {
+                            if (text.length >= 2) {
+                                weatherViewModel.searchCities(text)
+                                suggestionsPopup.open() // Добавьте это!
+                            } else {
+                                suggestionsPopup.close()
                             }
                         }
                     }
                 }
             }
 
+
+            Popup {
+                id: suggestionsPopup
+                parent: searchBoxOuter
+                y: searchBoxOuter.height + 5
+                width: searchBoxOuter.width
+                padding: 0
+                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                background: Rectangle { radius: 10; color: "#FFFFFF"; border.color: "#E0E0E0" }
+
+                ListView {
+                    id: listView
+                    model: weatherViewModel.searchResults
+                    height: contentHeight
+
+                    delegate: ItemDelegate {
+                        width: suggestionsPopup.width
+                        text: modelData.displayName
+
+                        onClicked: {
+                            searchInput.text = modelData.displayName
+                            weatherViewModel.addCityToFavorites(modelData.name)
+
+
+                            suggestionsPopup.close()
+
+                            root.addMode = false
+
+
+                            searchInput.focus = false
+                        }
+                    }
+                }
+                }
+
             Rectangle {
                 id: addFavBtn
-                anchors.top: parent.top
-                anchors.right: parent.right
+                anchors { top: parent.top; right: parent.right }
                 width: root.addMode ? 106 : 0
                 height: 40
                 radius: 14
                 clip: true
-                color: addBtnHover.containsMouse
-                       ? Qt.rgba(0.40, 0.76, 0.42, 0.25)
-                       : Qt.rgba(0.40, 0.73, 0.42, 0.18)
-                border.color: root.success
-                border.width: 1
+                color: addBtnHover.containsMouse ? "#BBE5BE" : "#E2F2E2"
+                border { color: root.success; width: 1 }
                 opacity: root.addMode ? 1 : 0
 
-                Behavior on width   { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                Behavior on opacity { NumberAnimation { duration: 150 } }
+                Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
                 RowLayout {
                     anchors.centerIn: parent
-                    spacing: 5
-                    visible: root.addMode
-                    Text {
-                        text: "✓"
-                        font.pixelSize: 14
-                        font.weight: Font.Medium
-                        color: root.success
-                    }
-                    Text {
-                        text: "Добавить"
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
-                        color: root.success
-                    }
+                    Text { text: "✓"; color: root.success }
+                    Text { text: "Добавить"; color: root.success; font.weight: Font.Medium }
                 }
 
                 MouseArea {
                     id: addBtnHover
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        if (!root.addMode) return
-                        var cityText = searchInput.text.trim()
-                        if (cityText.length === 0) return
-                        if (typeof weatherViewModel !== "undefined")
-                            weatherViewModel.addCityToFavorites(cityText)
-                        searchInput.text = ""
+
                         root.addMode = false
+                        suggestionsPopup.close()
                     }
                 }
             }
         }
-
-        // Избранное
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
@@ -865,7 +816,7 @@ Window {
                 }
 
                 TitleButton {
-                    visible: counterbutton < 6
+
                     icon: root.addMode ? "✕" : "+"
                     tooltip: root.addMode ? "Отмена" : "Добавить город"
                     accentColor: root.addMode ? root.danger : root.success
@@ -883,10 +834,7 @@ Window {
         }
     }
 
-    // Вкладка настроек.
-    // SettingsView получает root, а не weatherViewModel: единицы измерения теперь
-    // живут на стороне QML (isCelsius/isMs), а apiKey/autoRefresh — заглушки,
-    // т.к. в C++ ViewModel их пока нет.
+
     Drawer {
         id: settingsDrawer
         width: 250

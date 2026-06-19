@@ -3,11 +3,19 @@
 #include "../model/services/weatherservicemanager.h"
 #include <QSettings>
 #include <QDebug>
-
-WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service, QObject *parent)
+WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service,
+                                   std::shared_ptr<GeocodingService> geoService,
+                                   QObject *parent)
     : QObject(parent)
     , m_modelService(service)
+    , m_geoService(geoService)
 {
+
+    if (m_geoService) {
+        connect(m_geoService.get(), &GeocodingService::searchFinished,
+                this, &WeatherViewModel::onSearchFinished);
+    }
+
     loadFavoritesFromConfig();
     loadFavoriteTemps();
     loadWeather("Москва");
@@ -182,4 +190,37 @@ void WeatherViewModel::saveApiKey(const QString &apikey) {
     mng.setApiKey(apikey);
     qDebug() << "Api ключ" << apikey << " передан";
     emit apiChanged();
+}
+void WeatherViewModel::searchCities(const QString &query)
+{
+
+    if (m_geoService) {
+        m_geoService->searchCities(query);
+    } else {
+        qDebug() << "Ошибка: GeocodingService не инициализирован!";
+    }
+}
+
+void WeatherViewModel::onSearchFinished(const QVector<CityData> &results)
+{
+    QVariantList newResults;
+
+    for (const auto &city : results) {
+        QVariantMap map;
+        map["id"] = city.id;
+        map["name"] = city.name;
+        map["displayName"] = city.displayName;
+        map["country"] = city.country;
+        map["lat"] = city.latitude;
+        map["lon"] = city.longitude;
+
+        newResults.append(map);
+    }
+
+    m_searchResults = newResults;
+    emit searchResultsChanged();
+}
+QVariantList WeatherViewModel::searchResults() const
+{
+    return m_searchResults;
 }

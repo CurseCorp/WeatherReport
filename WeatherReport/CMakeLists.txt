@@ -32,6 +32,8 @@ qt_add_executable(appWeatherReport
     src/model/services/weatherservicefactory.cpp
     src/model/services/weatherservicefactory.h
     src/model/services/weatherservicemanager.cpp
+    src/model/services/geocodingservice.cpp
+    src/model/services/geocodingservice.h
 )
 
 
