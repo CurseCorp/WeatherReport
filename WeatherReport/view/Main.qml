@@ -596,7 +596,7 @@ Window {
 
                 // Кнопка переключения режима
                 TitleButton {
-                    icon: showHistory ? "☀" : "🕘"
+                    icon: showHistory ? "📅" : "🕘"
 
                     onClicked: {
                         showHistory = !showHistory
@@ -737,50 +737,88 @@ Window {
                         color: root.addMode ? "#1A1A2E" : root.textSecond
                         background: null
                         enabled: root.addMode
-                        readOnly: !root.addMode
+
                         onTextChanged: {
                             if (text.length >= 2) {
                                 weatherViewModel.searchCities(text)
-                                suggestionsPopup.open() // Добавьте это!
+                                suggestionsPopup.open()
                             } else {
                                 suggestionsPopup.close()
                             }
                         }
-                    }
-                }
-            }
 
+                        Keys.onReturnPressed: {
+                            var cityText = text.trim()
+                            if (cityText.length === 0) return
 
-            Popup {
-                id: suggestionsPopup
-                parent: searchBoxOuter
-                y: searchBoxOuter.height + 5
-                width: searchBoxOuter.width
-                padding: 0
-                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-                background: Rectangle { radius: 10; color: "#FFFFFF"; border.color: "#E0E0E0" }
-
-                ListView {
-                    id: listView
-                    model: weatherViewModel.searchResults
-                    height: contentHeight
-
-                    delegate: ItemDelegate {
-                        width: suggestionsPopup.width
-                        text: modelData.displayName
-
-                        onClicked: {
-                            searchInput.text = modelData.displayName
-                            weatherViewModel.addCityToFavorites(modelData.name)
-
-
+                            weatherViewModel.addCityToFavorites(cityText)
                             suggestionsPopup.close()
-
+                            text = ""
                             root.addMode = false
+                        }
+
+                        Keys.onEscapePressed: {
+                            text = ""
+                            root.addMode = false
+                            suggestionsPopup.close()
+                        }
+                    }
+
+                    // Попап с подсказками для поиска
+                    Popup {
+                        id: suggestionsPopup
+                        parent: searchBoxOuter
+                        y: searchBoxOuter.height + 5
+                        width: searchBoxOuter.width
+                        padding: 0
+                        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                        background: Rectangle {
+                                radius: 10
+                                color: "#2C2C3A"
+                                border.color: root.border
+                                border.width: 1
+                                opacity: 1.0
+                            }
+
+                        ListView {
+                            id: listView
+                            model: typeof weatherViewModel !== "undefined" ? weatherViewModel.searchResults : null
+                            height: Math.min(contentHeight, 200)
+                            width: suggestionsPopup.width
+                            clip: true
 
 
-                            searchInput.focus = false
+                            delegate: ItemDelegate {
+                                width: suggestionsPopup.width
+                                height: 40
+
+
+                                Text {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        text: modelData.displayName
+                                        font.pixelSize: 14
+                                        color: root.textPrimary
+
+                                    }
+                                font.pixelSize: 14
+
+                                background: Rectangle {
+                                    color: parent.hovered ? root.bgCardHover : root.bgCard
+                                    border.color: root.border
+                                    border.width: 2
+                                    radius: 10
+                                }
+
+                                onClicked: {
+                                    searchInput.text = modelData.displayName
+                                    weatherViewModel.addCityToFavorites(modelData.name)
+                                    suggestionsPopup.close()
+                                    searchInput.text = ""
+                                    root.addMpde = false
+                                }
+                            }
                         }
                     }
                 }
@@ -810,9 +848,14 @@ Window {
                     anchors.fill: parent
                     hoverEnabled: true
                     onClicked: {
-
-                        root.addMode = false
+                        var cityText = searchInput.text.trim()
+                        if (cityText.length === 0) {
+                            return
+                        }
+                        weatherViewModel.addCityToFavorites(cityText)
                         suggestionsPopup.close()
+                        searchInput.text = ""
+                        root.addMode = false
                     }
                 }
             }
