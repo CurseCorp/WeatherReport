@@ -4,64 +4,66 @@ import QtQuick.Layouts 1.15
 Rectangle {
     id: card
 
-    property string dateStr:  ""
-    property var    hourly:   []   // массив объектов { time: "00:00", temp: "11.9" }
+    property string timeStr: ""
+    property string iconImage: ""
+    property var tempStr
 
-    width:  parent ? parent.width : 900
-    height: 60
-    radius: 0
-    color:  "transparent"
+    width: 70
+    height: 160
 
-    // Разделитель снизу
-    Rectangle {
-        anchors.left:   parent.left
-        anchors.right:  parent.right
-        anchors.bottom: parent.bottom
-        height: 1
-        color:  "#2E3340"
-    }
+    radius: 10
+    color: "#353333"
+
+    border.color: "#807C7C"
+    border.width: 1
 
     ColumnLayout {
-        anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 8; bottomMargin: 8 }
-        spacing: 1
+        anchors.fill: parent
+        anchors.margins: 8
+        spacing: 10
 
         Text {
-            text: card.dateStr
-            font.pixelSize: 13
-            font.weight: Font.DemiBold
+            text: timeStr
+            font.pixelSize: 14
             color: "#E8EFF7"
+            Layout.alignment: Qt.AlignHCenter
+            z: 1
         }
-
-        Row {
-            Layout.fillWidth: true
-            spacing: 0
-
-            Repeater {
-                model: card.hourly
-
-                Column {
-                    width:   card.hourly.length > 0
-                             ? (card.width - 24) / card.hourly.length
-                             : 36
-                    spacing: 1
-
-                    Text {
-                        width: parent.width
-                        text:  modelData.time
-                        font.pixelSize: 10
-                        color: "#5A6478"
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Text {
-                        width: parent.width
-                        text:  formatTemp(modelData.temp)
-                        font.pixelSize: 9
-                        color: "#4DA6FF"
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-                }
-            }
+        Image{
+            source:getWeatherImage(iconImage)
+            anchors.centerIn: parent
+            height: 30
+            width: 30
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectFit
+            anchors.verticalCenter: parent.verticalCenter
         }
+        Text {
+            text: formatTemp(tempStr)
+            font.pixelSize: 16
+            font.bold: true
+            color: root.textPrimary
+            Layout.alignment: Qt.AlignHCenter
+            z: 1
+        }
+    }
+    function getWeatherImage(code) {
+        if (!code) return "🌡"
+        var map = {
+            "sunny": "images/sun.png",
+            "partly_cloudy": "images/partlycloudy.png",
+            "cloudy": "images/overcast.png",
+            "overcast": "images/overcast.png",
+            "fog": "images/fog.png",
+            "drizzle": "images/drizzle.png",
+            "thunderstorm": "images/thunderstorm.png",
+            "snow": "images/snow.png",
+            "light_snow": "images/snow.png",
+            "heavy_snow": "images/snow.png",
+            "light_rain": "images/rain.png",
+            "heavy_rain": "images/rain.png",
+            "rain": "images/rain.png"
+        }
+        return map[code] || "images/pressure"
     }
 }
