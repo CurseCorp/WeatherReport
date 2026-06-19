@@ -48,9 +48,16 @@ Rectangle {
         }
     }
     function getWeatherImage(code) {
-        if (!code) return "🌡"
+        if (!code) return "🌡";
+
+        // 1. Извлекаем часы из строки (предполагаем формат "HH:mm" или "H:mm")
+        var hour = parseInt(timeStr.split(":")[0]);
+        var isNight = (hour >= 23 || hour <= 4);
+
+        // 2. Создаем карту
         var map = {
-            "sunny": "images/sun.png",
+            // Используем тернарный оператор для выбора иконки для sunny
+            "sunny": (isNight ? "images/night.png" : "images/sun.png"),
             "partly_cloudy": "images/partlycloudy.png",
             "cloudy": "images/overcast.png",
             "overcast": "images/overcast.png",
@@ -63,7 +70,8 @@ Rectangle {
             "light_rain": "images/rain.png",
             "heavy_rain": "images/rain.png",
             "rain": "images/rain.png"
-        }
-        return map[code] || "images/pressure"
+        };
+
+        return map[code] || "images/pressure";
     }
 }

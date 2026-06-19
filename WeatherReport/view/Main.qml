@@ -88,19 +88,20 @@ Window {
     function getWeatherImage(code) {
         if (!code) return "🌡"
         var map = {
-            "sunny": "images/sun.png",
-            "partly_cloudy": "images/partlycloudy.png",
-            "cloudy": "images/overcast.png",
-            "overcast": "images/overcast.png",
-            "fog": "images/fog.png",
-            "drizzle": "images/drizzle.png",
-            "thunderstorm": "images/thunderstorm.png",
-            "snow": "images/snow.png",
-            "light_snow": "images/snow.png",
-            "heavy_snow": "images/snow.png",
-            "light_rain": "images/rain.png",
-            "heavy_rain": "images/rain.png",
-            "rain": "images/rain.png"
+            "sunny": "images/Mainsun.png",
+            "partly_cloudy": "images/Mainpartlycloudy.png",
+            "cloudy": "images/Mainovercast.png",
+            "overcast": "images/Mainovercast.png",
+            "fog": "images/Mainfog.png",
+            "drizzle": "images/Maindrizzle.png",
+            "thunderstorm": "images/Mainthunderstorm.png",
+            "snow": "images/Mainsnow.png",
+            "light_snow": "images/Mainsnow.png",
+            "heavy_snow": "images/Mainsnow.png",
+            "light_rain": "images/Mainrain.png",
+            "heavy_rain": "images/Mainrain.png",
+            "rain": "images/Mainrain.png",
+            "night": "images/Mainnight.png"
         }
         return map[code] || "images/pressure"
     }
@@ -347,12 +348,15 @@ Window {
 
         // Основная погода
         Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.leftMargin: 70
-            anchors.topMargin: 170
+            // Позиционирование основного контейнера
+            anchors {
+                top: parent.top
+                left: parent.left
+                topMargin: 170
+                leftMargin: 70
+            }
 
-            Layout.preferredWidth: 470
+            width: 470
             height: 260
             radius: 14
             color: root.bgCard
@@ -365,14 +369,17 @@ Window {
                 palette.dark: root.accent
             }
 
-            Row {
+            // Используем RowLayout для управления горизонтальным положением
+            RowLayout {
                 anchors.fill: parent
                 anchors.margins: 35
-                spacing: -15
+                spacing: 20 // Заменили отрицательный отступ на реальный
 
-                Column {
+                // Левая часть с текстом
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
                     spacing: 4
-                    anchors.verticalCenter: parent.verticalCenter
 
                     Text {
                         text: typeof weatherViewModel !== "undefined" ? formatTemp(weatherViewModel.tempText) : "--°"
@@ -383,7 +390,7 @@ Window {
 
                     Text {
                         text: typeof weatherViewModel !== "undefined"
-                              ? "Мин " + formatTemp(weatherViewModel.minTemp) + "  /  Макс " + formatTemp(weatherViewModel.maxTemp)
+                              ? "Мин " + formatTemp(weatherViewModel.minTemp) + " / Макс " + formatTemp(weatherViewModel.maxTemp)
                               : ""
                         font.pixelSize: 12
                         color: root.textSecond
@@ -396,13 +403,15 @@ Window {
                     }
                 }
 
+                // Правая часть с иконкой
                 Image {
+                    Layout.preferredWidth: 150
+                    Layout.preferredHeight: 150
+                    Layout.alignment: Qt.AlignVCenter
+
                     source: typeof weatherViewModel !== "undefined"
                             ? getWeatherImage(weatherViewModel.iconCode) : "images/sun.png"
-                    width: 280
-                    height: 280
                     fillMode: Image.PreserveAspectFit
-                    anchors.verticalCenter: parent.verticalCenter
                 }
             }
         }

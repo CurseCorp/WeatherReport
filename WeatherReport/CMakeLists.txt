@@ -47,6 +47,7 @@ qt_add_qml_module(appWeatherReport
         view/DetailCard.qml
         view/SettingsView.qml
     RESOURCES
+        view/images/night.png
         view/images/rain.png
         view/images/sun.png
         view/images/fog.png
@@ -59,6 +60,15 @@ qt_add_qml_module(appWeatherReport
         view/images/precipitation.png
         view/images/pressure.png
         view/images/windSpeed.png
+        view/images/Mainnight.png
+        view/images/Mainrain.png
+        view/images/Mainsun.png
+        view/images/Mainfog.png
+        view/images/Mainsnow.png
+        view/images/Mainpartlycloudy.png
+        view/images/Mainthunderstorm.png
+        view/images/Maindrizzle.png
+        view/images/Mainovercast.png
         SOURCES src/viewmodel/CacheManager.h
 
 )
