@@ -72,7 +72,7 @@ QString WeatherIconMapper::getIconNameForWeatherAPI(const QString &code)
     };
 
     if (!map.contains(code)) {
-        qDebug() << "⚠️ [WeatherAPI] Неизвестный код иконки:" << code;
+        qDebug() << "[WeatherAPI] Неизвестный код иконки:" << code;
     }
 
     return map.value(code, "sunny");
@@ -144,7 +144,7 @@ QString WeatherIconMapper::getIconNameForOpenWeatherMap(int code)
     };
 
     if (!map.contains(code)) {
-        qDebug() << "⚠️ [OpenWeatherMap] Неизвестный код иконки:" << code;
+        qDebug() << "[OpenWeatherMap] Неизвестный код иконки:" << code;
     }
 
     return map.value(code, "sunny");

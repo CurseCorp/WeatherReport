@@ -37,6 +37,7 @@ void WeatherViewModel::processWeatherData(const QString &city, double lat, doubl
     if (cachedData.isValid && !isExpired) {
         qDebug() << "--- УСПЕШНО: Данные взяты из свежего кэша для:" << city;
         updateUIData(cachedData);
+        loadFavoriteTemps();
         return;
     }
 
@@ -52,10 +53,12 @@ void WeatherViewModel::processWeatherData(const QString &city, double lat, doubl
         CacheManager::save(city, "forecast", current);
         CacheManager::updateCacheTimestamp(city);
         updateUIData(current);
+        loadFavoriteTemps();
     } else {
         if (cachedData.isValid) {
             qDebug() << "--- ОШИБКА СЕТИ: Используем старый кэш в качестве резерва.";
             updateUIData(cachedData);
+            loadFavoriteTemps();
         } else {
             qDebug() << "--- ОШИБКА: Не удалось получить данные ни из сети, ни из кэша!";
         }
@@ -103,20 +106,20 @@ void WeatherViewModel::onSearchFinished(const QVector<CityData> &results)
     m_pendingCity.clear();
 
     if (results.isEmpty()) {
-        qDebug() << "❌ Город не найден:" << city;
+        qDebug() << "Город не найден:" << city;
         return;
     }
 
     double lat = results.first().latitude;
     double lon = results.first().longitude;
-    qDebug() << "✅ Город найден:" << city << "координаты:" << lat << lon;
+    qDebug() << "Город найден:" << city << "координаты:" << lat << lon;
 
     processWeatherData(city, lat, lon);
 }
 
 void WeatherViewModel::updateUIData(const WeatherData &data) {
     if (data.dailyForecasts.isEmpty()) {
-        qDebug() << "⚠️ updateUIData: нет данных dailyForecasts";
+        qDebug() << "updateUIData: нет данных dailyForecasts";
         return;
     }
 
@@ -175,8 +178,11 @@ void WeatherViewModel::addCityToFavorites(const QString &city) {
 
     m_favoriteCities.append(trimmedCity);
     QSettings("CurseCorp", "WeatherReport").setValue("favorites", m_favoriteCities);
+
     loadWeather(city);
+
     loadFavoriteTemps();
+
     emit favoriteCitiesChanged();
 }
 
@@ -207,6 +213,7 @@ void WeatherViewModel::loadFavoriteTemps() {
 
     emit favoriteCityTempsChanged();
 }
+
 void WeatherViewModel::loadHistory(const QString &city) {
     m_historyData.clear();
     QDate today = QDate::currentDate();

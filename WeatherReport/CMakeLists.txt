@@ -16,10 +16,7 @@ qt_add_executable(appWeatherReport
     src/viewmodel/WeatherViewModel.cpp
     src/viewmodel/CacheManager.h
     src/model/entities/City.h
-
-    src/model/entities/ForecastData.h
     src/model/entities/WeatherData.h
-    src/model/entities/WeatherService.h
     src/model/services/WeatherAPI.cpp
     src/model/services/weatherapi.h
     src/model/services/IWeatherService.h
