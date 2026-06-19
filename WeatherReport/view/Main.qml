@@ -655,7 +655,7 @@ Window {
                 }
 
 
-            // История прогнозов
+
             ListView {
                 visible: showHistory
 
