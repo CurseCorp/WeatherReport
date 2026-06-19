@@ -21,6 +21,7 @@ struct DailyForecast {
     int pressure;
     double precipitationMm;
     QVector<HourlyData> hourly;
+    QString icon;
 };
 
 struct WeatherData {
@@ -32,7 +33,7 @@ struct WeatherData {
     int humidity = 0;
     double windSpeedMs = 0.0;
     int pressure = 0;
-
+    QString currentIcon;
     QDateTime createdAt = QDateTime::currentDateTime();
     QVector<DailyForecast> dailyForecasts;
     bool isValid = false;
