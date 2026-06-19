@@ -1,15 +1,23 @@
 #include "WeatherViewModel.h"
 #include "CacheManager.h"
 #include "../model/services/weatherservicemanager.h"
+#include "../model/entities/City.h"
+#include "../model/entities/WeatherData.h"
 #include <QSettings>
 #include <QDebug>
+#include <QDate>
+
 WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service,
                                    std::shared_ptr<GeocodingService> geoService,
                                    QObject *parent)
     : QObject(parent)
-    , m_modelService(service)
     , m_geoService(geoService)
+    , m_pendingCity("")
 {
+    m_modelService = std::shared_ptr<IWeatherService>(
+        m_serviceManager.getService(),
+        [](IWeatherService*){}
+        );
 
     if (m_geoService) {
         connect(m_geoService.get(), &GeocodingService::searchFinished,
@@ -21,8 +29,8 @@ WeatherViewModel::WeatherViewModel(std::shared_ptr<WeatherApi> service,
     loadWeather("Москва");
 }
 
-void WeatherViewModel::loadWeather(const QString& city) {
-    if (city.isEmpty()) return;
+void WeatherViewModel::processWeatherData(const QString &city, double lat, double lon)
+{
     bool isExpired = CacheManager::isCacheExpired(city);
     WeatherData cachedData = CacheManager::load(city, "forecast");
 
@@ -31,18 +39,18 @@ void WeatherViewModel::loadWeather(const QString& city) {
         updateUIData(cachedData);
         return;
     }
+
     qDebug() << (isExpired ? "--- Кэш устарел, обновляем из сети..."
                            : "--- Кэш не найден, делаем сетевые запросы...");
 
-    WeatherData current = m_modelService->getCurrentWeather(city);
-    QVector<DailyForecast> forecast = m_modelService->getForecast3Days(city);
+    WeatherData current = m_modelService->getCurrentWeather(lat, lon);
+    QVector<DailyForecast> forecast = m_modelService->getForecast3Days(lat, lon);
 
     if (current.isValid && !forecast.isEmpty()) {
         current.dailyForecasts = forecast;
-
+        current.cityName = city;
         CacheManager::save(city, "forecast", current);
         CacheManager::updateCacheTimestamp(city);
-
         updateUIData(current);
     } else {
         if (cachedData.isValid) {
@@ -54,23 +62,77 @@ void WeatherViewModel::loadWeather(const QString& city) {
     }
 }
 
+void WeatherViewModel::loadWeather(const QString& city) {
+    if (city.isEmpty()) {
+        qDebug() << "loadWeather: пустое название города";
+        return;
+    }
+
+    qDebug() << "--- Загрузка погоды для города:" << city;
+
+    m_pendingCity = city;
+
+    if (m_geoService) {
+        m_geoService->searchCities(city);
+    } else {
+        qDebug() << "Ошибка: GeocodingService не инициализирован!";
+    }
+}
+
+void WeatherViewModel::onSearchFinished(const QVector<CityData> &results)
+{
+    QVariantList newResults;
+    for (const auto &city : results) {
+        QVariantMap map;
+        map["id"] = city.id;
+        map["name"] = city.name;
+        map["displayName"] = city.displayName;
+        map["country"] = city.country;
+        map["lat"] = city.latitude;
+        map["lon"] = city.longitude;
+        newResults.append(map);
+    }
+    m_searchResults = newResults;
+    emit searchResultsChanged();
+
+    if (m_pendingCity.isEmpty()) {
+        return;
+    }
+
+    QString city = m_pendingCity;
+    m_pendingCity.clear();
+
+    if (results.isEmpty()) {
+        qDebug() << "❌ Город не найден:" << city;
+        return;
+    }
+
+    double lat = results.first().latitude;
+    double lon = results.first().longitude;
+    qDebug() << "✅ Город найден:" << city << "координаты:" << lat << lon;
+
+    processWeatherData(city, lat, lon);
+}
+
 void WeatherViewModel::updateUIData(const WeatherData &data) {
-    if (data.dailyForecasts.isEmpty()) return;
+    if (data.dailyForecasts.isEmpty()) {
+        qDebug() << "⚠️ updateUIData: нет данных dailyForecasts";
+        return;
+    }
 
     const auto &today = data.dailyForecasts[0];
 
     m_cityNameText = data.cityName;
-CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
+    CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
     m_tempText = QString::number(data.temperatureCurrent, 'f', 1);
     m_humidity = QString::number(data.humidity) + " %";
     m_description = data.description;
-    m_windSpeed = QString::number(data.windSpeedMs);
+    m_windSpeed = QString::number(data.windSpeedMs, 'f', 1);
     m_pressure = QString::number(data.pressure) + " мм рт.ст.";
-    m_precipitation = QString::number(today.precipitationMm) + " мм";
+    m_precipitation = QString::number(today.precipitationMm, 'f', 1) + " мм";
     m_minTemp = QString::number(today.tempMin, 'f', 1);
     m_maxTemp = QString::number(today.tempMax, 'f', 1);
     m_iconCode = data.currentIcon;
-
 
     emit weatherUpdated();
 
@@ -100,6 +162,7 @@ CacheManager::saveHistory(data.cityName, QDate::currentDate(), data);
     m_forecastModel = newModelData;
     emit forecastModelChanged();
 }
+
 void WeatherViewModel::loadFavoritesFromConfig() {
     QSettings settings("CurseCorp", "WeatherReport");
     m_favoriteCities = settings.value("favorites").toStringList();
@@ -109,6 +172,7 @@ void WeatherViewModel::loadFavoritesFromConfig() {
 void WeatherViewModel::addCityToFavorites(const QString &city) {
     QString trimmedCity = city.trimmed();
     if (trimmedCity.isEmpty() || m_favoriteCities.contains(trimmedCity)) return;
+
     m_favoriteCities.append(trimmedCity);
     QSettings("CurseCorp", "WeatherReport").setValue("favorites", m_favoriteCities);
     loadWeather(city);
@@ -119,10 +183,12 @@ void WeatherViewModel::addCityToFavorites(const QString &city) {
 void WeatherViewModel::removeCityFromFavorites(const QString &city) {
     QString trimmedCity = city.trimmed();
     if (!m_favoriteCities.contains(trimmedCity)) return;
+
     m_favoriteCities.removeAll(trimmedCity);
     QSettings("CurseCorp", "WeatherReport").setValue("favorites", m_favoriteCities);
     emit favoriteCitiesChanged();
 }
+
 void WeatherViewModel::loadFavoriteTemps() {
     QSettings settings("CurseCorp", "WeatherReport");
     m_favoriteCities = settings.value("favorites").toStringList();
@@ -134,14 +200,8 @@ void WeatherViewModel::loadFavoriteTemps() {
         if (cached.isValid) {
             m_favoriteCityTemps[city] = QString::number(cached.temperatureCurrent, 'f', 1);
         } else {
-
             m_favoriteCityTemps[city] = "--";
-
-            WeatherData data = m_modelService->getCurrentWeather(city);
-            if (data.isValid) {
-                m_favoriteCityTemps[city] = QString::number(data.temperatureCurrent, 'f', 1);
-                CacheManager::save(city, "forecast", data);
-            }
+            qDebug() << "Нет данных в кэше для:" << city;
         }
     }
 
@@ -164,63 +224,47 @@ void WeatherViewModel::loadHistory(const QString &city) {
                 map["tempMin"] = day.tempMin;
                 map["description"] = day.description;
             }
-
             m_historyData.append(map);
         }
     }
     emit historyDataChanged();
 }
+
 void WeatherViewModel::refreshWeather(const QString &city) {
     qDebug() << "--- Принудительное обновление для:" << city;
-    WeatherData current = m_modelService->getCurrentWeather(city);
-    QVector<DailyForecast> forecast = m_modelService->getForecast3Days(city);
 
-    if (current.isValid && !forecast.isEmpty()) {
-        current.dailyForecasts = forecast;
-        CacheManager::save(city, "forecast", current);
-        updateUIData(current);
-        qDebug() << "--- УСПЕШНО: Данные обновлены из сети.";
-    } else {
-        qDebug() << "--- ОШИБКА: Сеть недоступна, берем данные из кэша...";
-        loadWeather(city);
-    }
-}
-void WeatherViewModel::saveApiKey(const QString &apikey) {
-    WeatherServiceManager mng;
-    mng.setApiKey(apikey);
-    qDebug() << "Api ключ" << apikey << " передан";
-    emit apiChanged();
-}
-void WeatherViewModel::searchCities(const QString &query)
-{
-
+    m_pendingCity = city;
     if (m_geoService) {
-        m_geoService->searchCities(query);
+        m_geoService->searchCities(city);
     } else {
         qDebug() << "Ошибка: GeocodingService не инициализирован!";
     }
 }
 
-void WeatherViewModel::onSearchFinished(const QVector<CityData> &results)
-{
-    QVariantList newResults;
+void WeatherViewModel::saveApiKey(const QString &apikey) {
+    qDebug() << "--- Сохранение API ключа:" << (apikey.isEmpty() ? "пустой" : "***");
 
-    for (const auto &city : results) {
-        QVariantMap map;
-        map["id"] = city.id;
-        map["name"] = city.name;
-        map["displayName"] = city.displayName;
-        map["country"] = city.country;
-        map["lat"] = city.latitude;
-        map["lon"] = city.longitude;
+    m_serviceManager.setApiKey(apikey);
 
-        newResults.append(map);
+    m_modelService = std::shared_ptr<IWeatherService>(
+        m_serviceManager.getService(),
+        [](IWeatherService*){}
+        );
+
+    emit apiChanged();
+
+    if (!m_cityNameText.isEmpty() && m_cityNameText != "—") {
+        refreshWeather(m_cityNameText);
+    } else {
+        loadWeather("Москва");
     }
-
-    m_searchResults = newResults;
-    emit searchResultsChanged();
 }
-QVariantList WeatherViewModel::searchResults() const
+
+void WeatherViewModel::searchCities(const QString &query)
 {
-    return m_searchResults;
+    if (m_geoService) {
+        m_geoService->searchCities(query);
+    } else {
+        qDebug() << "Ошибка: GeocodingService не инициализирован!";
+    }
 }

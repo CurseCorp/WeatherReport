@@ -58,6 +58,7 @@ QByteArray OpenWeatherMapService::syncGet(const QUrl &url)
 
 WeatherData OpenWeatherMapService::parseCurrentWeather(const QByteArray &rawData)
 {
+    qDebug() << "📡 OpenWeatherMap current RAW:" << rawData;
     WeatherData result;
     result.isValid = false;
 
@@ -65,9 +66,22 @@ WeatherData OpenWeatherMapService::parseCurrentWeather(const QByteArray &rawData
     if (!doc.isObject()) return result;
 
     QJsonObject obj = doc.object();
-    if (obj.contains("cod") && obj["cod"].toString() != "200") {
-        qDebug() << "Ошибка OpenWeatherMap:" << obj["message"].toString();
-        return result;
+
+    if (obj.contains("cod")) {
+        QJsonValue codValue = obj["cod"];
+        bool isSuccess = false;
+
+        if (codValue.isDouble()) {
+            isSuccess = (codValue.toInt() == 200);
+        } else if (codValue.isString()) {
+            isSuccess = (codValue.toString() == "200");
+        }
+
+        if (!isSuccess) {
+            QString message = obj["message"].toString();
+            qDebug() << "OpenWeatherMap ошибка:" << codValue.toString() << message;
+            return result;
+        }
     }
 
     result.cityId = obj["id"].toInt();
