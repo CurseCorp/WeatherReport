@@ -121,3 +121,40 @@ QVector<CityData> GeocodingService::parseSearchResults(const QByteArray &rawData
 
     return results;
 }
+QVector<CityData> GeocodingService::searchCitiesSync(const QString &query)
+{
+    if (query.trimmed().length() < 2) {
+        return QVector<CityData>();
+    }
+
+    if (m_cache.contains(query)) {
+        qDebug() << "Геокодинг sync: данные из кэша для:" << query;
+        return *m_cache[query];
+    }
+
+    qDebug() << "Геокодинг sync: реальный запрос для:" << query;
+
+    QUrl url("http://api.weatherapi.com/v1/search.json");
+    QUrlQuery urlQuery;
+    urlQuery.addQueryItem("key", m_apiKey);
+    urlQuery.addQueryItem("q", query);
+    url.setQuery(urlQuery);
+
+    QNetworkRequest request(url);
+    QNetworkReply *reply = m_networkManager->get(request);
+
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    QByteArray responseData = reply->readAll();
+    reply->deleteLater();
+
+    QVector<CityData> results = parseSearchResults(responseData);
+
+    if (!results.isEmpty()) {
+        m_cache.insert(query, new QVector<CityData>(results));
+    }
+
+    return results;
+}
