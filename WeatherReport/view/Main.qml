@@ -28,7 +28,9 @@ Window {
     property bool   isLoadingLocal: false
     property string lastUpdatedLocal: ""
 
-    property bool showPastForecast: false
+    property bool showHistory: false
+    property int currentDayIndex: 0
+    property bool findpressed: false
 
     Component.onCompleted: {
         requestWeather("Москва")
@@ -39,7 +41,13 @@ Window {
         isLoadingLocal = true
         if (typeof weatherViewModel !== "undefined")
             weatherViewModel.loadWeather(city)
+            weatherViewModel.loadHistory(city)
     }
+    function refWeather(city) {
+
+            if (typeof weatherViewModel !== "undefined")
+                weatherViewModel.refreshWeather(city)
+        }
 
     // Реагируем на сигналы реального ViewModel
     Connections {
@@ -62,7 +70,7 @@ Window {
 
     function formatTemp(celsiusValue) {
         var value = isCelsius ? Math.round(celsiusValue) : celsiusToFahrenheit(celsiusValue)
-        var sign = value >= 0 ? "+" : ""
+        var sign = value >= 0 ? "+" : "-"
         return sign + value + "°" + (isCelsius ? "C" : "F")
     }
     // Конвертация скорости ветра м/с -> км/ч (чисто визуальная, без участия C++)
@@ -77,15 +85,25 @@ Window {
     }
 
     // Подбор иконки по текстовому описанию погоды (iconCode в ViewModel пока нет)
-    function getWeatherEmoji(description) {
-        var d = (description || "").toLowerCase()
-        if (d.indexOf("гроза") !== -1)                          return "images/storm.png"
-        if (d.indexOf("снег") !== -1)                            return "images/snow.png"
-        if (d.indexOf("дожд") !== -1 || d.indexOf("ливен") !== -1) return "images/rain.png"
-        if (d.indexOf("облач") !== -1 || d.indexOf("пасмурно") !== -1) return "images/cloud.png"
-        if (d.indexOf("туман") !== -1)                           return "images/fog.png"
-        if (d.indexOf("ясно") !== -1 || d.indexOf("солнечно") !== -1) return "images/sun.png"
-        return "images/sun.png"
+    function getWeatherImage(code) {
+        if (!code) return "🌡"
+        var map = {
+            "sunny": "images/Mainsun.png",
+            "partly_cloudy": "images/Mainpartlycloudy.png",
+            "cloudy": "images/Mainovercast.png",
+            "overcast": "images/Mainovercast.png",
+            "fog": "images/Mainfog.png",
+            "drizzle": "images/Maindrizzle.png",
+            "thunderstorm": "images/Mainthunderstorm.png",
+            "snow": "images/Mainsnow.png",
+            "light_snow": "images/Mainsnow.png",
+            "heavy_snow": "images/Mainsnow.png",
+            "light_rain": "images/Mainrain.png",
+            "heavy_rain": "images/Mainrain.png",
+            "rain": "images/Mainrain.png",
+            "night": "images/Mainnight.png"
+        }
+        return map[code] || "images/pressure"
     }
 
     // Текущая дата на русском (в ViewModel нет полей weekday/day/month)
@@ -118,7 +136,6 @@ Window {
     readonly property color border:      "#353333"
     readonly property color danger:      "#EF5350"
     readonly property color success:     "#66BB6A"
-
     MouseArea {
         id: dragArea
         anchors.top: parent.top
@@ -183,7 +200,8 @@ Window {
                     onClicked: {
                         rotateAnim.restart()
                         if (typeof weatherViewModel !== "undefined")
-                            requestWeather(weatherViewModel.cityNameText)
+                            refWeather(weatherViewModel.cityNameText)
+
                     }
                     RotationAnimator on rotation {
                         id: rotateAnim
@@ -251,20 +269,69 @@ Window {
             radius: 14
             color: "transparent"
             clip: true
-
-            Text {
+            Row {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: 20
                 anchors.leftMargin: 30
-                text: typeof weatherViewModel !== "undefined" ? weatherViewModel.cityNameText : "—"
-                font.pixelSize: 30
-                font.weight: Font.Medium
-                color: root.textPrimary
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
 
+                spacing: 10
+
+                Text {
+                    text: typeof weatherViewModel !== "undefined"
+                          ? weatherViewModel.cityNameText
+                          : "—"
+
+                    font.pixelSize: 30
+                    font.weight: Font.Medium
+                    color: root.textPrimary
+
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                TitleButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: root.findpressed ? "◀" : "▶"
+                    tooltip: root.findpressed ? "Отмена" : "Поиск города"
+                    accentColor: root.findpressed ? root.danger : root.accent
+
+                    onClicked: {
+                        root.findpressed = !root.findpressed
+
+                        if (!root.findpressed) {
+                            searchforonecountry.text = ""
+                        } else {
+                            searchforonecountry.forceActiveFocus()
+                        }
+                    }
+                }
+                TextField {
+                    id: searchforonecountry
+
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    visible: root.findpressed
+                    width: 180
+                    color: root.textPrimary
+                    placeholderText: "Введите город"
+                    enabled: root.findpressed
+                    readOnly: !root.findpressed
+                    Keys.onReturnPressed: {
+                        var cityText = text.trim()
+                        if (cityText.length === 0) return
+
+                        requestWeather(cityText)
+
+                        text = ""
+                        root.findpressed = false
+                    }
+
+                    Keys.onEscapePressed: {
+                        text = ""
+                        root.findpressed = false
+                    }
+                }
+            }
             Text {
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -281,12 +348,15 @@ Window {
 
         // Основная погода
         Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.leftMargin: 70
-            anchors.topMargin: 170
+            // Позиционирование основного контейнера
+            anchors {
+                top: parent.top
+                left: parent.left
+                topMargin: 170
+                leftMargin: 70
+            }
 
-            Layout.preferredWidth: 470
+            width: 470
             height: 260
             radius: 14
             color: root.bgCard
@@ -299,14 +369,17 @@ Window {
                 palette.dark: root.accent
             }
 
-            Row {
+            // Используем RowLayout для управления горизонтальным положением
+            RowLayout {
                 anchors.fill: parent
                 anchors.margins: 35
-                spacing: -15
+                spacing: 20 // Заменили отрицательный отступ на реальный
 
-                Column {
+                // Левая часть с текстом
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
                     spacing: 4
-                    anchors.verticalCenter: parent.verticalCenter
 
                     Text {
                         text: typeof weatherViewModel !== "undefined" ? formatTemp(weatherViewModel.tempText) : "--°"
@@ -317,7 +390,7 @@ Window {
 
                     Text {
                         text: typeof weatherViewModel !== "undefined"
-                              ? "Мин " + formatTemp(weatherViewModel.minTemp) + "  /  Макс " + formatTemp(weatherViewModel.maxTemp)
+                              ? "Мин " + formatTemp(weatherViewModel.minTemp) + " / Макс " + formatTemp(weatherViewModel.maxTemp)
                               : ""
                         font.pixelSize: 12
                         color: root.textSecond
@@ -330,13 +403,15 @@ Window {
                     }
                 }
 
+                // Правая часть с иконкой
                 Image {
+                    Layout.preferredWidth: 150
+                    Layout.preferredHeight: 150
+                    Layout.alignment: Qt.AlignVCenter
+
                     source: typeof weatherViewModel !== "undefined"
-                            ? getWeatherEmoji(weatherViewModel.description) : "images/sun.png"
-                    width: 280
-                    height: 280
+                            ? getWeatherImage(weatherViewModel.iconCode) : "images/sun.png"
                     fillMode: Image.PreserveAspectFit
-                    anchors.verticalCenter: parent.verticalCenter
                 }
             }
         }
@@ -392,214 +467,277 @@ Window {
 
         // Дни погоды
         Rectangle {
+            id: forecastWindow
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.leftMargin: 70
             anchors.bottomMargin: 30
-
             width: 660
             height: 230
             radius: 14
             color: root.bgCard
             clip: true
 
-            Text {
-                id: forecastTitle
+            Row {
                 anchors.top: parent.top
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.topMargin: 10
-                text: "Прогноз на 3 дня"
-                font.pixelSize: 16
-                font.weight: Font.Medium
-                color: root.textPrimary
-            }
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.margins: 10
 
+                TitleButton {
+                    icon: "◀"
+                    enabled: !showHistory && currentDayIndex > 0
+                    onClicked: currentDayIndex--
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 210
+                    horizontalAlignment: Text.AlignHCenter
+
+                    text: showHistory
+                          ? "История прогнозов"
+                          : (weatherViewModel.forecastModel.length > 0
+                             ? "Прогноз погоды на 24 часа: " +
+                               weatherViewModel.forecastModel[currentDayIndex].date
+                             : "")
+
+                    font.pixelSize: 16
+                    font.weight: Font.Medium
+                    color: root.textPrimary
+                }
+
+                TitleButton {
+                    icon: "▶"
+                    enabled: !showHistory &&
+                             weatherViewModel.forecastModel.length > 0 &&
+                             currentDayIndex < weatherViewModel.forecastModel.length - 1
+                    onClicked: currentDayIndex++
+                }
+
+                // Кнопка переключения режима
+                TitleButton {
+                    icon: showHistory ? "☀" : "🕘"
+
+                    onClicked: {
+                        showHistory = !showHistory
+                    }
+                }
+            }
+            ScrollView {
+                    id: hourlyScroll
+
+                    visible: !showHistory
+
+                    anchors.top: parent.top
+                    anchors.topMargin: 40
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+
+                    ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                    WheelHandler {
+                        onWheel: function(event) {
+                            var flick = hourlyScroll.contentItem
+
+                            flick.contentX -= event.angleDelta.y
+
+                            if (flick.contentX < 0)
+                                flick.contentX = 0
+
+                            if (flick.contentX > flick.contentWidth - flick.width)
+                                flick.contentX = flick.contentWidth - flick.width
+
+                            event.accepted = true
+                        }
+                    }
+
+                    Row {
+                        spacing: 10
+                        padding: 10
+
+                        Repeater {
+                            model: weatherViewModel.forecastModel[currentDayIndex].hourly
+
+                            ForecastCard {
+                                timeStr: modelData.time
+                                iconImage: modelData.icon
+                                tempStr: modelData.temp
+                            }
+                        }
+                    }
+                }
+
+                // ==========================
+                // ИСТОРИЯ ПРОГНОЗОВ
+                // ==========================
             ListView {
-                id: forecastListView
-                anchors.top: forecastTitle.bottom
+                visible: showHistory
+
+                anchors.top: parent.top
+                anchors.topMargin: 40
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                anchors.margins: 8
-                anchors.topMargin: 4
-                clip: true
-                model: typeof weatherViewModel !== "undefined" ? weatherViewModel.forecastModel : null
-                orientation: ListView.Vertical
 
-                delegate: ForecastCard {
-                    width:   forecastListView.width
-                    dateStr: modelData.date
-                    hourly:  modelData.hourly
+                clip: true
+                spacing: 8
+
+                model: weatherViewModel.historyData
+
+                delegate: Rectangle {
+                    width: ListView.view.width - 20
+                    height: 60
+                    radius: 8
+                    color: Qt.rgba(1, 1, 1, 0.05)
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 25
+
+                        Text {
+                            width: 70
+                            text: modelData.date
+                            color: root.textPrimary
+                            font.bold: true
+                        }
+
+                        Text {
+                            width: 90
+                            text: formatTemp(modelData.tempMin) + " / " + formatTemp(modelData.tempMax)
+                            color: root.textPrimary
+                        }
+
+                        Text {
+                            text: modelData.description
+                            color: root.textPrimary
+                            elide: Text.ElideRight
+                        }
+                    }
                 }
             }
         }
 
         // Поисковая строка / добавление в избранное
-        // Поиска с подсказками в ViewModel нет (searchCity не реализован) — просто вводим
-        // название города и сразу добавляем его в избранное через addCityToFavorites().
+
         Rectangle {
             id: searchAreaWrapper
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.leftMargin: 755
-            anchors.topMargin: 115
-
-            Layout.preferredWidth: root.addMode ? 520 : 400
+            anchors { top: parent.top; left: parent.left; leftMargin: 755; topMargin: 115 }
             width: root.addMode ? 520 : 400
             height: 40
-            radius: 14
             color: "transparent"
 
-            Behavior on width {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-            }
+            Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
             Rectangle {
                 id: searchBoxOuter
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: root.addMode ? addFavBtn.left : parent.right
-                anchors.rightMargin: root.addMode ? 8 : 0
+                anchors { top: parent.top; left: parent.left; right: root.addMode ? addFavBtn.left : parent.right; rightMargin: root.addMode ? 8 : 0 }
                 height: 40
                 radius: 14
                 color: root.addMode ? "#EDEAEA" : root.bgCard
-                border.color: root.addMode
-                              ? (searchInput.activeFocus ? root.accent : root.border)
-                              : root.bgCard
-                border.width: root.addMode ? (searchInput.activeFocus ? 2 : 1) : 1
+                border {
+                    color: root.addMode ? (searchInput.activeFocus ? root.accent : root.border) : root.bgCard
+                    width: root.addMode ? (searchInput.activeFocus ? 2 : 1) : 1
+                }
                 clip: true
 
-                Behavior on color { ColorAnimation { duration: 200 } }
-                Behavior on border.color { ColorAnimation { duration: 200 } }
+                RowLayout {
+                    anchors { fill: parent; leftMargin: 14; rightMargin: 8 }
+                    spacing: 8
 
-                Rectangle {
-                    id: searchBox
-                    anchors.fill: parent
-                    radius: 14
-                    color: "transparent"
+                    Text { text: "🔍"; font.pixelSize: 14; color: root.addMode ? root.textSecond : "#788EA8" }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 8
-                        spacing: 8
-
-                        Text {
-                            text: "🔍"
-                            font.pixelSize: 14
-                            color: root.addMode ? root.textSecond : Qt.rgba(0.47, 0.56, 0.66, 0.5)
-                            Behavior on color { ColorAnimation { duration: 200 } }
-                        }
-
-                        TextField {
-                            id: searchInput
-                            Layout.fillWidth: true
-                            placeholderText: root.addMode ? "Введите город для добавления..." : "Нажмите +"
-                            font.pixelSize: 14
-                            color: root.addMode ? "#1A1A2E" : root.textSecond
-                            background: basic
-                            leftPadding: 0
-                            placeholderTextColor: root.addMode ? root.textSecond : Qt.rgba(0.47, 0.56, 0.66, 0.45)
-                            enabled: root.addMode
-                            readOnly: !root.addMode
-
-                            Behavior on color { ColorAnimation { duration: 200 } }
-
-                            Keys.onReturnPressed: {
-                                if (!root.addMode) return
-                                var cityText = text.trim()
-                                if (cityText.length === 0) return
-                                if (typeof weatherViewModel !== "undefined")
-                                    weatherViewModel.addCityToFavorites(cityText)
-                                text = ""
-                                root.addMode = false
-                            }
-                            Keys.onEscapePressed: {
-                                focus = false
-                                root.addMode = false
-                                text = ""
-                            }
-                        }
-
-                        Rectangle {
-                            width: 22
-                            height: 22
-                            radius: 11
-                            color: clearHover.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                            visible: searchInput.text.length > 0 && root.addMode
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 11
-                                color: root.textSecond
-                            }
-                            MouseArea {
-                                id: clearHover
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: searchInput.text = ""
+                    TextField {
+                        id: searchInput
+                        Layout.fillWidth: true
+                        placeholderText: root.addMode ? "Введите город для добавления..." : "Нажмите +"
+                        font.pixelSize: 14
+                        color: root.addMode ? "#1A1A2E" : root.textSecond
+                        background: null
+                        enabled: root.addMode
+                        readOnly: !root.addMode
+                        onTextChanged: {
+                            if (text.length >= 2) {
+                                weatherViewModel.searchCities(text)
+                                suggestionsPopup.open() // Добавьте это!
+                            } else {
+                                suggestionsPopup.close()
                             }
                         }
                     }
                 }
             }
 
+
+            Popup {
+                id: suggestionsPopup
+                parent: searchBoxOuter
+                y: searchBoxOuter.height + 5
+                width: searchBoxOuter.width
+                padding: 0
+                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                background: Rectangle { radius: 10; color: "#FFFFFF"; border.color: "#E0E0E0" }
+
+                ListView {
+                    id: listView
+                    model: weatherViewModel.searchResults
+                    height: contentHeight
+
+                    delegate: ItemDelegate {
+                        width: suggestionsPopup.width
+                        text: modelData.displayName
+
+                        onClicked: {
+                            searchInput.text = modelData.displayName
+                            weatherViewModel.addCityToFavorites(modelData.name)
+
+
+                            suggestionsPopup.close()
+
+                            root.addMode = false
+
+
+                            searchInput.focus = false
+                        }
+                    }
+                }
+                }
+
             Rectangle {
                 id: addFavBtn
-                anchors.top: parent.top
-                anchors.right: parent.right
+                anchors { top: parent.top; right: parent.right }
                 width: root.addMode ? 106 : 0
                 height: 40
                 radius: 14
                 clip: true
-                color: addBtnHover.containsMouse
-                       ? Qt.rgba(0.40, 0.76, 0.42, 0.25)
-                       : Qt.rgba(0.40, 0.73, 0.42, 0.18)
-                border.color: root.success
-                border.width: 1
+                color: addBtnHover.containsMouse ? "#BBE5BE" : "#E2F2E2"
+                border { color: root.success; width: 1 }
                 opacity: root.addMode ? 1 : 0
 
-                Behavior on width   { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                Behavior on opacity { NumberAnimation { duration: 150 } }
+                Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
                 RowLayout {
                     anchors.centerIn: parent
-                    spacing: 5
-                    visible: root.addMode
-                    Text {
-                        text: "✓"
-                        font.pixelSize: 14
-                        font.weight: Font.Medium
-                        color: root.success
-                    }
-                    Text {
-                        text: "Добавить"
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
-                        color: root.success
-                    }
+                    Text { text: "✓"; color: root.success }
+                    Text { text: "Добавить"; color: root.success; font.weight: Font.Medium }
                 }
 
                 MouseArea {
                     id: addBtnHover
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        if (!root.addMode) return
-                        var cityText = searchInput.text.trim()
-                        if (cityText.length === 0) return
-                        if (typeof weatherViewModel !== "undefined")
-                            weatherViewModel.addCityToFavorites(cityText)
-                        searchInput.text = ""
+
                         root.addMode = false
+                        suggestionsPopup.close()
                     }
                 }
             }
         }
-
-        // Избранное
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
@@ -678,7 +816,7 @@ Window {
                 }
 
                 TitleButton {
-                    visible: counterbutton < 6
+
                     icon: root.addMode ? "✕" : "+"
                     tooltip: root.addMode ? "Отмена" : "Добавить город"
                     accentColor: root.addMode ? root.danger : root.success
@@ -696,10 +834,7 @@ Window {
         }
     }
 
-    // Вкладка настроек.
-    // SettingsView получает root, а не weatherViewModel: единицы измерения теперь
-    // живут на стороне QML (isCelsius/isMs), а apiKey/autoRefresh — заглушки,
-    // т.к. в C++ ViewModel их пока нет.
+
     Drawer {
         id: settingsDrawer
         width: 250

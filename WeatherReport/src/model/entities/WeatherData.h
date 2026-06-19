@@ -13,29 +13,42 @@ struct HourlyData {
 
 struct DailyForecast {
     QString date;
-    double tempMin;
-    double tempMax;
-    QString description;
-    int humidity;
-    double windSpeedMs;
-    int pressure;
-    double precipitationMm;
     QVector<HourlyData> hourly;
+
+    double tempMin = 0.0;
+    double tempMax = 0.0;
+    double precipitationMm = 0.0;
+    int humidity = 0;
+    int pressure = 0;
+    double windSpeedMs = 0.0;
+    QString description;
+    QString icon;
+    double feelsLike = 0.0;
 };
 
-struct WeatherData {
+struct WeatherData
+{
     int cityId = 0;
     QString cityName;
+
     double temperatureCurrent = 0.0;
-    double feelsLike = 0.0;
+    double temperatureMin = 0.0;
+    double temperatureMax = 0.0;
+
     QString description;
+    QString currentIcon;
+
     int humidity = 0;
     double windSpeedMs = 0.0;
     int pressure = 0;
+    double precipitationMm = 0.0;
+    double feelsLike = 0.0;
 
     QDateTime createdAt = QDateTime::currentDateTime();
+    QVector<HourlyData> hourlyForecast;
     QVector<DailyForecast> dailyForecasts;
+
     bool isValid = false;
 };
 
-#endif
+#endif // WEATHERDATA_H

@@ -10,7 +10,8 @@ int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     auto globalWeatherService = std::make_shared<WeatherApi>();
 
-    auto weatherViewModel = std::make_unique<WeatherViewModel>(globalWeatherService);
+   auto geoService = std::make_shared<GeocodingService>();
+   auto weatherViewModel = std::make_unique<WeatherViewModel>(globalWeatherService, geoService);
 
     QQmlApplicationEngine engine;
 

@@ -1,12 +1,10 @@
-#pragma once
-#include "../entities/WeatherData.h"
-#include <string>
-#include <algorithm>
+#ifndef WEATHERSERVICE_H
+#define WEATHERSERVICE_H
 
-class WeatherService {
+class WeatherService
+{
 public:
-    WeatherData fetchCurrentWeather(const std::string& city) {
-
-
-    }
+    WeatherService() = default;
 };
+
+#endif
