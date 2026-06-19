@@ -4,9 +4,10 @@
 #include "IWeatherService.h"
 #include <QNetworkAccessManager>
 #include <QString>
-
-class OpenWeatherMapService : public IWeatherService
+#include <QObject>
+class OpenWeatherMapService : public QObject,public IWeatherService
 {
+    Q_OBJECT
 public:
     OpenWeatherMapService();
     ~OpenWeatherMapService();
