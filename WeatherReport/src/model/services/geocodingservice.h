@@ -17,7 +17,7 @@ public:
     ~GeocodingService();
 
     void searchCities(const QString &query);
-
+    QVector<CityData> searchCitiesSync(const QString &query);
 signals:
     void searchFinished(const QVector<CityData> &results);
     void errorOccurred(const QString &error);
@@ -34,6 +34,7 @@ private:
     QString m_apiKey;
 
     QVector<CityData> parseSearchResults(const QByteArray &rawData);
+
     void doSearch(const QString &query);
 };
 

@@ -69,20 +69,20 @@ QString extractWeatherCode(const QJsonObject &condition)
         if (codeValue.isDouble()) {
             int codeInt = codeValue.toInt();
             QString codeStr = QString::number(codeInt);
-            qDebug() << "✅ WeatherAPI: code (число):" << codeStr;
+            qDebug() << "WeatherAPI: code (число):" << codeStr;
             return codeStr;
         }
         else if (codeValue.isString()) {
             QString codeStr = codeValue.toString();
             if (!codeStr.isEmpty() && codeStr != "0") {
-                qDebug() << "✅ WeatherAPI: code (строка):" << codeStr;
+                qDebug() << "WeatherAPI: code (строка):" << codeStr;
                 return codeStr;
             }
         }
     }
 
-    qDebug() << "❌ WeatherAPI: поле 'code' отсутствует или пустое!";
-    qDebug() << "❌ condition:" << condition;
+    qDebug() << "WeatherAPI: поле 'code' отсутствует или пустое!";
+    qDebug() << "condition:" << condition;
 
     return "000";
 }
