@@ -655,12 +655,7 @@ Window {
                 }
 
 
-<<<<<<< HEAD
-                // ИСТОРИЯ ПРОГНОЗОВ
 
-=======
-            // История прогнозов
->>>>>>> bab58431fff80c88f47c091daecbbfd0f170ed4e
             ListView {
                 visible: showHistory
 
