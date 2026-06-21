@@ -6,7 +6,7 @@ class TestWeatherViewModel : public QObject {
 private slots:
     void init() {
         QSettings settings("CurseCorp", "WeatherReport");
-        settings.clear(); // Полная очистка настроек перед запуском следующего теста
+        settings.clear(); 
     }
     // Проверка добавления и удаления городов из списка избранного
     void testFavoritesLogic() {
@@ -58,7 +58,7 @@ private slots:
 
         vm.addCityToFavorites("  Берлин  ");
 
-        // Ожидаем, что город добавлен как "Berlin" (без пробелов)
+     
         QVERIFY(vm.favoriteCities().contains("Берлин"));
         QVERIFY(!vm.favoriteCities().contains("  Берлин  "));
     }
@@ -67,14 +67,14 @@ private slots:
         WeatherViewModel vm(nullptr, nullptr);
 
         vm.addCityToFavorites("Воронеж");
-        vm.addCityToFavorites("Воронеж"); // Метод просто выйдет, город в списке останется один
+        vm.addCityToFavorites("Воронеж"); 
 
-        // Правильная проверка: ищем "Воронеж", а не "Madrid"
+       
         int count = 0;
         for(const auto& city : vm.favoriteCities()) {
             if(city == "Воронеж") count++;
         }
-        QCOMPARE(count, 1); // Теперь всё должно быть правильно!
+        QCOMPARE(count, 1); 
     }
     void testAddEmptyCityToFavorites() {
         WeatherViewModel vm(nullptr, nullptr);
@@ -88,9 +88,9 @@ private slots:
     void testRemoveNonExistentCity() {
         WeatherViewModel vm(nullptr, nullptr);
         vm.addCityToFavorites("Москва");
-        // Попытка удалить то, чего нет
+
         vm.removeCityFromFavorites("Токио");
-        // Список не должен был измениться
+ 
         QCOMPARE(vm.favoriteCities().size(), 1);
     }
 
